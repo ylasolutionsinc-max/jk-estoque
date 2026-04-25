@@ -59,7 +59,7 @@ button:active{opacity:.75;transform:scale(.97)}
 
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
-const API = 'https://ambiente-n8n.zq7wss.easypanel.host/webhook/jk-estoque';
+const API = 'https://ambiente-n8n.zq7wss.easypanel.host/webhook/jk-db';
 const ADMIN_CODE = 'JK2024';
 const LOW_STOCK_THRESHOLD = 5;
 
@@ -244,7 +244,18 @@ function home() {
     </div>
   </div>`;
 }
+
 function doLogout() { S.user=null; S.srch=''; go('login'); }
+
+async function clearAllData() {
+  if (!confirm('⚠️ Tem certeza? Isso apagará TODOS os itens e histórico. Esta ação não pode ser desfeita.')) return;
+  try {
+    await apiCall({ action: 'clear' });
+    await loadData();
+    toast('Dados apagados com sucesso!', 'warn');
+    go('home');
+  } catch(e) { toast('Erro ao limpar dados.', 'err'); }
+}
 
 // ─── ITEM DETAIL ─────────────────────────────────────────────────────────────
 function item() {
@@ -324,7 +335,8 @@ function backAdminList() { S.adminTab='list'; S.editItem=null; S.formData=null; 
 
 function adminList() {
   return `<div class="su">
-    <button onclick="openNewItem()" class="btn btn-acc" style="width:100%;font-size:17px;padding:14px;margin-bottom:20px">+ CADASTRAR NOVO ITEM</button>
+    <button onclick="openNewItem()" class="btn btn-acc" style="width:100%;font-size:17px;padding:14px;margin-bottom:10px">+ CADASTRAR NOVO ITEM</button>
+    <button onclick="clearAllData()" class="btn" style="width:100%;font-size:14px;padding:11px;margin-bottom:20px;background:transparent;color:var(--dan);border:1px solid var(--dan);border-radius:8px">🗑 Limpar todos os dados de teste</button>
     ${S.items.length===0?`<div style="text-align:center;padding:40px;color:var(--mut)">Nenhum item cadastrado.</div>`:
       S.items.map(it=>`<div class="card" style="padding:13px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
         <div style="width:46px;height:46px;background:var(--surf);border-radius:8px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
