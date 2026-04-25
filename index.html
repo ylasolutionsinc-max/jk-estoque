@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>JK Fixadores — Estoque</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0f0f0f;--surf:#1a1a1a;--card:#222;--brd:#333;--acc:#f59e0b;--dan:#ef4444;--suc:#22c55e;--txt:#f0f0f0;--mut:#777}
+html,body{min-height:100%;background:var(--bg);color:var(--txt);font-family:'Barlow',sans-serif}
+input,textarea,select{font-family:'Barlow',sans-serif!important;background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:11px 14px;color:var(--txt);font-size:15px;outline:none;width:100%;box-sizing:border-box}
+input:focus,textarea:focus{border-color:var(--acc)}
+button{cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;border:none;border-radius:8px;letter-spacing:.5px}
+button:active{opacity:.75;transform:scale(.97)}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--brd)}
+@keyframes su{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+#app{min-height:100vh}
+.hdr{background:var(--surf);border-bottom:1px solid var(--brd);padding:13px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.body{max-width:560px;margin:0 auto;padding:16px;padding-bottom:80px}
+.card{background:var(--card);border:1px solid var(--brd);border-radius:12px}
+.btn{border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn-acc{background:var(--acc);color:#000}
+.btn-ghost{background:var(--surf);color:var(--mut);border:1px solid var(--brd)}
+.btn-dan{background:var(--dan);color:#fff}
+.btn-suc{background:var(--suc);color:#fff}
+.lbl{font-size:11px;color:var(--mut);letter-spacing:1.5px;margin-bottom:6px;font-family:'Barlow Condensed';font-weight:700;display:block;text-transform:uppercase}
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--brd);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
+.bnav-btn{flex:1;background:transparent;border:none;padding:10px 0 8px;color:var(--mut);cursor:pointer;font-family:'Barlow Condensed';font-size:10px;letter-spacing:1px;display:flex;flex-direction:column;align-items:center;gap:3px;border-top:2px solid transparent}
+.bnav-btn.active{color:var(--acc);border-top-color:var(--acc)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.su{animation:su .28s ease}
+.fi{animation:fi .3s ease}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:11px 22px;border-radius:10px;font-family:'Barlow Condensed';font-weight:700;font-size:15px;z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.5);animation:su .25s ease;display:none}
+#loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:1000}
+.spinner{width:44px;height:44px;border:3px solid var(--brd);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite}
+.model-pill{padding:9px 14px;font-size:14px;font-family:'Barlow Condensed';font-weight:700;border-radius:8px;border:1px solid var(--brd);background:var(--card);color:var(--txt);cursor:pointer;transition:all .15s}
+.model-pill.active{background:var(--acc);color:#000;border-color:var(--acc)}
+.filter-tab{flex:1;border-radius:8px;padding:9px 8px;font-size:13px;font-family:'Barlow Condensed';font-weight:700;border:1px solid var(--brd);background:var(--card);color:var(--txt);cursor:pointer}
+.filter-tab.active{background:var(--acc);color:#000;border-color:var(--acc)}
+.mov-row{padding:12px 14px;margin-bottom:8px;border-radius:12px;border:1px solid var(--brd);background:var(--card);display:flex;justify-content:space-between;align-items:flex-start}
+.badge{font-size:9px;padding:2px 5px;border-radius:4px;font-family:'Barlow Condensed';font-weight:700;position:absolute;top:6px;right:6px}
+.card-hover{cursor:pointer;transition:all .2s}
+.card-hover:hover{border-color:var(--acc);transform:translateY(-1px)}
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div style="font-size:40px">⚙️</div>
+  <div class="spinner"></div>
+  <div style="color:var(--mut);font-size:13px;font-family:monospace">conectando ao sistema...</div>
+</div>
+
+<div id="toast"></div>
+<div id="app"></div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+const API = 'https://ambiente-n8n.zq7wss.easypanel.host/webhook/jk-estoque';
+const ADMIN_CODE = 'JK2024';
+const LOW_STOCK_THRESHOLD = 5;
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let S = {
+  screen: 'login',
+  user: null,
+  items: [],
+  movements: [],
+  activeId: null,
+  adminTab: 'list',
+  editItem: null,
+  formData: null,
+  histFilter: 'all',
+  selModel: null,
+  qty: 1,
+  loading: false,
+  srch: ''
+};
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const genId = () => Math.random().toString(36).slice(2,9) + Date.now().toString(36);
+const totalQty = it => it.models.reduce((s,m) => s+m.quantity, 0);
+const fmt = iso => {
+  const d = new Date(iso);
+  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}) + ' ' +
+         d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+};
+const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+let _toastTimer;
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = type==='ok' ? '#22c55e' : type==='warn' ? '#f59e0b' : '#ef4444';
+  el.style.color = '#000';
+  el.style.display = 'block';
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.style.display='none', 3200);
+}
+
+// ─── API ─────────────────────────────────────────────────────────────────────
+async function apiCall(body) {
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+async function loadData() {
+  const data = await apiCall({ action: 'get' });
+  S.items = data.items || [];
+  S.movements = data.movements || [];
+}
+
+async function saveData() {
+  await apiCall({ action: 'save', items: S.items, movements: S.movements });
+}
+
+// ─── IMAGE ───────────────────────────────────────────────────────────────────
+function resizeImg(file) {
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const M = 420;
+        let [w,h] = [img.width, img.height];
+        if (w > M) { h = h*M/w; w = M; }
+        if (h > M) { w = w*M/h; h = M; }
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        res(c.toDataURL('image/jpeg', 0.65));
+      };
+      img.src = e.target.result;
+    };
+    r.readAsDataURL(file);
+  });
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+function go(screen, id=null) {
+  S.screen = screen;
+  if (id) S.activeId = id;
+  if (screen === 'item') { S.selModel = null; S.qty = 1; }
+  render();
+  window.scrollTo(0,0);
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function render() {
+  const screens = { login, home, item, admin, history };
+  document.getElementById('app').innerHTML = (screens[S.screen] || login)();
+}
+
+// ─── LOGIN ───────────────────────────────────────────────────────────────────
+let _showAdm = false;
+function login() {
+  return `<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px" class="fi">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#92400e);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px">⚙️</div>
+      <div style="font-family:'Barlow Condensed';font-weight:900;font-size:34px;letter-spacing:3px;color:var(--acc)">JK FIXADORES</div>
+      <div style="color:var(--mut);font-size:13px;letter-spacing:2px;margin-top:4px">CONTROLE DE ESTOQUE</div>
+    </div>
+    <div class="card su" style="padding:28px;width:100%;max-width:340px">
+      <label class="lbl">Seu Nome</label>
+      <input id="ln" placeholder="Digite seu nome..." style="margin-bottom:16px" autofocus/>
+      ${_showAdm ? `<label class="lbl" style="margin-top:4px">Código Admin</label>
+        <input id="lc" type="password" placeholder="Código de administrador..." style="margin-bottom:16px"/>` : ''}
+      <button onclick="doLogin()" class="btn btn-acc" style="width:100%;font-size:18px;padding:14px">ENTRAR</button>
+      <button onclick="toggleAdm()" class="btn" style="background:transparent;color:var(--mut);width:100%;font-size:12px;margin-top:8px;padding:8px">${_showAdm?'cancelar modo admin':'sou administrador'}</button>
+    </div>
+  </div>`;
+}
+function toggleAdm() { _showAdm = !_showAdm; render(); }
+function doLogin() {
+  const n = document.getElementById('ln')?.value?.trim();
+  if (!n) return toast('Digite seu nome!','err');
+  const c = document.getElementById('lc')?.value || '';
+  S.user = { name: n, isAdmin: c === ADMIN_CODE };
+  _showAdm = false;
+  go('home');
+}
+
+// ─── HOME ────────────────────────────────────────────────────────────────────
+function home() {
+  const srch = S.srch || '';
+  const filtered = S.items.filter(it =>
+    it.name.toLowerCase().includes(srch.toLowerCase()) ||
+    (it.category||'').toLowerCase().includes(srch.toLowerCase())
+  );
+  const cats = [...new Set(filtered.map(it => it.category||'Geral'))];
+
+  const cardHtml = it => {
+    const tot = totalQty(it);
+    const low = tot <= LOW_STOCK_THRESHOLD;
+    const qColor = tot===0 ? 'var(--dan)' : low ? 'var(--acc)' : 'var(--txt)';
+    return `<div class="card card-hover" onclick="go('item','${it.id}')" style="overflow:hidden">
+      <div style="height:110px;background:var(--surf);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative">
+        ${it.image ? `<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">` : '<span style="font-size:36px">🔩</span>'}
+        ${tot===0 ? '<span class="badge" style="background:var(--dan);color:#fff">ESGOTADO</span>' : low ? '<span class="badge" style="background:var(--acc);color:#000">BAIXO</span>' : ''}
+      </div>
+      <div style="padding:10px 12px">
+        <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px;line-height:1.2;margin-bottom:2px">${esc(it.name)}</div>
+        <div style="font-size:11px;color:var(--mut);margin-bottom:4px">${it.models.length} modelo${it.models.length>1?'s':''}</div>
+        <div style="font-family:'Barlow Condensed';font-weight:800;font-size:20px;color:${qColor}">${tot}<span style="font-size:11px;font-weight:400;color:var(--mut);margin-left:3px">un</span></div>
+      </div>
+    </div>`;
+  };
+
+  const grid = cats.map(cat => `
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Barlow Condensed';font-size:12px;color:var(--mut);letter-spacing:2.5px;margin-bottom:10px">— ${esc(cat)}</div>
+      <div class="grid2">${filtered.filter(it=>(it.category||'Geral')===cat).map(cardHtml).join('')}</div>
+    </div>`).join('');
+
+  const empty = S.items.length===0
+    ? `<div style="text-align:center;padding:60px 20px;color:var(--mut)"><div style="font-size:48px;margin-bottom:12px">📦</div><div style="font-family:'Barlow Condensed';font-size:20px;margin-bottom:6px">Estoque vazio</div>${S.user.isAdmin?'<p style="font-size:13px">Toque em Admin para cadastrar itens.</p>':''}</div>`
+    : filtered.length===0 ? `<div style="text-align:center;padding:40px;color:var(--mut)">Nenhum item encontrado.</div>` : '';
+
+  return `<div>
+    <div class="hdr" style="flex-direction:column;align-items:stretch;gap:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-family:'Barlow Condensed';font-weight:900;font-size:22px;color:var(--acc);letter-spacing:2px">⚙️ JK FIXADORES</div>
+          <div style="font-size:12px;color:var(--mut)">Olá, <strong style="color:var(--txt)">${esc(S.user.name)}</strong>${S.user.isAdmin?' <span style="color:var(--acc)">· ADMIN</span>':''}</div>
+        </div>
+        <button onclick="doLogout()" class="btn btn-ghost" style="padding:7px 14px;font-size:13px">Sair</button>
+      </div>
+      <input class="inp" placeholder="🔍  Buscar produto..." value="${esc(srch)}" oninput="S.srch=this.value;render()" style="font-size:14px;padding:10px 14px"/>
+    </div>
+    <div class="body">${empty||grid}</div>
+    <div class="bnav">
+      <button class="bnav-btn active" onclick="go('home')"><span style="font-size:18px">📦</span>Estoque</button>
+      <button class="bnav-btn" onclick="go('history')"><span style="font-size:18px">📋</span>Histórico</button>
+      ${S.user.isAdmin?'<button class="bnav-btn" onclick="go(\'admin\')"><span style="font-size:18px">⚙️</span>Admin</button>':''}
+    </div>
+  </div>`;
+}
+function doLogout() { S.user=null; S.srch=''; go('login'); }
+
+// ─── ITEM DETAIL ─────────────────────────────────────────────────────────────
+function item() {
+  const it = S.items.find(i => i.id===S.activeId);
+  if (!it) return `<div class="body">Item não encontrado. <button onclick="go('home')" class="btn btn-ghost" style="padding:8px 14px;margin-top:8px">Voltar</button></div>`;
+  if (!S.selModel || !it.models.find(m=>m.id===S.selModel.id)) S.selModel = it.models[0]||null;
+  const sel = S.selModel;
+  const canRem = sel && sel.quantity >= S.qty && S.qty >= 1;
+  const qc = sel ? (sel.quantity===0?'var(--dan)':sel.quantity<=LOW_STOCK_THRESHOLD?'var(--acc)':'var(--txt)') : 'var(--txt)';
+
+  return `<div class="fi">
+    <div class="hdr">
+      <button onclick="go('home')" class="btn btn-ghost" style="padding:8px 14px;font-size:18px">←</button>
+      <div style="font-family:'Barlow Condensed';font-weight:800;font-size:19px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(it.name)}</div>
+    </div>
+    <div class="body">
+      <div class="card" style="height:200px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:14px">
+        ${it.image?`<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:64px">🔩</span>'}
+      </div>
+      ${it.description?`<div class="card" style="padding:12px 14px;margin-bottom:14px;font-size:14px;color:var(--mut);line-height:1.6">${esc(it.description)}</div>`:''}
+      <label class="lbl">Selecione o Modelo</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        ${it.models.map(m=>`<button class="model-pill ${sel&&sel.id===m.id?'active':''}" onclick="S.selModel=S.items.find(i=>i.id==='${it.id}').models.find(m=>m.id==='${m.id}');S.qty=1;render()">${esc(m.name)} <span style="font-size:11px;opacity:.7">(${m.quantity})</span></button>`).join('')}
+      </div>
+      ${sel?`<div class="card" style="padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-family:'Barlow Condensed';font-weight:700;font-size:17px">${esc(sel.name)}</div><div style="font-size:12px;color:var(--mut);margin-top:2px">em estoque</div></div>
+        <div style="font-family:'Barlow Condensed';font-weight:900;font-size:36px;color:${qc}">${sel.quantity}<span style="font-size:13px;font-weight:400;color:var(--mut);margin-left:4px">${esc(sel.unit)}</span></div>
+      </div>`:''}
+      <label class="lbl">Quantidade</label>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px">
+        <button onclick="S.qty=Math.max(1,S.qty-1);render()" class="btn btn-ghost" style="width:48px;height:48px;font-size:22px;flex-shrink:0">−</button>
+        <input type="number" min="1" value="${S.qty}" onchange="S.qty=Math.max(1,parseInt(this.value)||1);render()" style="text-align:center;font-family:'Barlow Condensed';font-weight:800;font-size:26px;height:48px;padding:0 10px"/>
+        <button onclick="S.qty=S.qty+1;render()" class="btn btn-ghost" style="width:48px;height:48px;font-size:22px;flex-shrink:0">+</button>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="handleAdjust('out')" class="btn btn-dan" style="flex:2;font-size:18px;padding:14px;opacity:${canRem?1:.4}" ${!canRem?'disabled':''}>📤  RETIRAR</button>
+        ${S.user.isAdmin?`<button onclick="handleAdjust('in')" class="btn btn-suc" style="flex:1;font-size:18px;padding:14px">📥</button>`:''}
+      </div>
+      ${!canRem&&sel&&sel.quantity<S.qty?`<p style="font-size:13px;color:var(--dan);text-align:center;margin-top:8px">Estoque insuficiente. Disponível: ${sel.quantity} ${esc(sel.unit)}</p>`:''}
+    </div>
+  </div>`;
+}
+
+async function handleAdjust(type) {
+  const it = S.items.find(i => i.id===S.activeId);
+  const sel = S.selModel;
+  if (!it||!sel||S.qty<1) return;
+  if (type==='out' && sel.quantity < S.qty) return toast('Estoque insuficiente!','err');
+  const delta = type==='out' ? -S.qty : S.qty;
+  S.items = S.items.map(i => i.id!==it.id ? i : {
+    ...i, models: i.models.map(m => m.id!==sel.id ? m : {...m, quantity:Math.max(0,m.quantity+delta)})
+  });
+  const mov = {id:genId(),ts:new Date().toISOString(),user:S.user.name,itemId:it.id,itemName:it.name,modelId:sel.id,modelName:sel.name,qty:S.qty,type};
+  S.movements = [mov, ...S.movements];
+  S.qty = 1;
+  render();
+  try {
+    await saveData();
+    const word = type==='out'?'retirado(s)':'adicionado(s)';
+    toast(`${mov.qty} × ${sel.name} ${word}!`, type==='out'?'warn':'ok');
+  } catch(e) {
+    toast('Erro ao salvar. Verifique a conexão.','err');
+  }
+}
+
+// ─── ADMIN ───────────────────────────────────────────────────────────────────
+function admin() {
+  return `<div>
+    <div class="hdr">
+      <button onclick="${S.adminTab==='list'?"go('home')":'backAdminList()'}" class="btn btn-ghost" style="padding:8px 14px;font-size:18px">←</button>
+      <div style="font-family:'Barlow Condensed';font-weight:800;font-size:19px;color:var(--acc);letter-spacing:1px">⚙️ ADMINISTRADOR</div>
+    </div>
+    <div class="body">${S.adminTab==='list'?adminList():adminForm()}</div>
+  </div>`;
+}
+function backAdminList() { S.adminTab='list'; S.editItem=null; S.formData=null; render(); }
+
+function adminList() {
+  return `<div class="su">
+    <button onclick="openNewItem()" class="btn btn-acc" style="width:100%;font-size:17px;padding:14px;margin-bottom:20px">+ CADASTRAR NOVO ITEM</button>
+    ${S.items.length===0?`<div style="text-align:center;padding:40px;color:var(--mut)">Nenhum item cadastrado.</div>`:
+      S.items.map(it=>`<div class="card" style="padding:13px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
+        <div style="width:46px;height:46px;background:var(--surf);border-radius:8px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          ${it.image?`<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:22px">🔩</span>'}
+        </div>
+        <div style="flex:1;overflow:hidden">
+          <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.name)}</div>
+          <div style="font-size:12px;color:var(--mut)">${it.models.length} modelo(s) · ${totalQty(it)} un total</div>
+        </div>
+        <button onclick="openEditItem('${it.id}')" class="btn btn-ghost" style="font-size:13px;padding:7px 12px">EDITAR</button>
+      </div>`).join('')}
+  </div>`;
+}
+
+function openNewItem() {
+  S.editItem=null;
+  S.formData={name:'',cat:'',desc:'',img:'',models:[{id:genId(),name:'',quantity:0,unit:'un'}]};
+  S.adminTab='form'; render();
+}
+function openEditItem(id) {
+  S.editItem=S.items.find(i=>i.id===id);
+  S.formData={name:S.editItem.name,cat:S.editItem.category||'',desc:S.editItem.description||'',img:S.editItem.image||'',models:S.editItem.models.map(m=>({...m}))};
+  S.adminTab='form'; render();
+}
+
+function getF() { return S.formData || (S.formData={name:'',cat:'',desc:'',img:'',models:[{id:genId(),name:'',quantity:0,unit:'un'}]}); }
+
+function adminForm() {
+  const f=getF();
+  return `<div class="su">
+    <div style="font-family:'Barlow Condensed';font-weight:800;font-size:22px;color:var(--acc);margin-bottom:20px">${S.editItem?'EDITAR ITEM':'NOVO ITEM'}</div>
+    <label class="lbl">Nome do Item *</label>
+    <input id="fn" value="${esc(f.name)}" oninput="getF().name=this.value" placeholder="Ex: Parafuso Sextavado" style="margin-bottom:14px"/>
+    <label class="lbl">Categoria</label>
+    <input id="fc" value="${esc(f.cat)}" oninput="getF().cat=this.value" placeholder="Ex: Parafusos, Porcas, Arruelas..." style="margin-bottom:14px"/>
+    <label class="lbl">Descrição</label>
+    <textarea id="fd" oninput="getF().desc=this.value" placeholder="Descreva o item, medidas, materiais..." rows="3" style="resize:vertical;margin-bottom:14px">${esc(f.desc)}</textarea>
+    <label class="lbl">Foto</label>
+    <input type="file" id="fimg" accept="image/*" style="display:none" onchange="handleImgUpload(this)"/>
+    <div style="margin-bottom:18px">
+      ${f.img
+        ?`<div style="display:flex;align-items:center;gap:12px"><img src="${f.img}" style="width:100px;height:75px;object-fit:cover;border-radius:8px;border:1px solid var(--brd)"/><button onclick="getF().img='';render()" class="btn" style="background:transparent;color:var(--dan);font-size:13px;padding:6px 10px">Remover</button></div>`
+        :`<button onclick="document.getElementById('fimg').click()" class="btn btn-ghost" style="font-size:14px;padding:12px 20px;border-style:dashed">📷 Adicionar Foto</button>`}
+    </div>
+    <label class="lbl">Modelos / Variações *</label>
+    <div id="mlist">
+      ${f.models.map((m,i)=>`<div class="card" style="padding:11px 12px;margin-bottom:8px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input value="${esc(m.name)}" oninput="getF().models.find(x=>x.id==='${m.id}').name=this.value" placeholder="Modelo ${i+1} (ex: M6×30)" style="flex:2;font-size:14px;padding:8px 10px"/>
+          <input type="number" min="0" value="${m.quantity}" oninput="getF().models.find(x=>x.id==='${m.id}').quantity=Math.max(0,parseInt(this.value)||0)" style="flex:1;font-size:14px;padding:8px 10px;text-align:center"/>
+          <input value="${esc(m.unit)}" oninput="getF().models.find(x=>x.id==='${m.id}').unit=this.value" placeholder="un" style="width:48px;font-size:14px;padding:8px 6px"/>
+          ${f.models.length>1?`<button onclick="getF().models=getF().models.filter(x=>x.id!=='${m.id}');render()" style="background:none;border:none;color:var(--dan);cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0">×</button>`:''}
+        </div>
+      </div>`).join('')}
+    </div>
+    <button onclick="getF().models.push({id:genId(),name:'',quantity:0,unit:'un'});render()" class="btn btn-ghost" style="width:100%;font-size:13px;padding:10px;margin-bottom:22px;border-style:dashed">+ Adicionar modelo</button>
+    <button onclick="saveItem()" class="btn btn-acc" style="width:100%;font-size:18px;padding:14px">SALVAR ITEM</button>
+    ${S.editItem?`<button onclick="deleteItem('${S.editItem.id}')" class="btn" style="background:transparent;color:var(--dan);width:100%;font-size:14px;margin-top:10px;padding:10px">🗑 Excluir este item</button>`:''}
+  </div>`;
+}
+
+async function handleImgUpload(inp) {
+  const file = inp.files[0];
+  if (!file) return;
+  try {
+    getF().img = await resizeImg(file);
+    render();
+  } catch(e) { toast('Erro ao processar imagem','err'); }
+}
+
+async function saveItem() {
+  const f = getF();
+  const fn = document.getElementById('fn'); if(fn) f.name=fn.value;
+  const fc = document.getElementById('fc'); if(fc) f.cat=fc.value;
+  const fd = document.getElementById('fd'); if(fd) f.desc=fd.value;
+  if (!f.name.trim()) return toast('Informe o nome do item!','err');
+  if (f.models.some(m=>!m.name.trim())) return toast('Todos os modelos precisam de nome!','err');
+  const it = {id:S.editItem?.id||genId(),name:f.name.trim(),category:f.cat.trim()||'Geral',description:f.desc.trim(),image:f.img,models:f.models};
+  S.items = S.editItem ? S.items.map(i=>i.id===it.id?it:i) : [...S.items,it];
+  S.adminTab='list'; S.editItem=null; S.formData=null;
+  render();
+  try { await saveData(); toast(S.editItem?'Item atualizado!':'Item criado!'); }
+  catch(e) { toast('Erro ao salvar. Verifique a conexão.','err'); }
+}
+
+async function deleteItem(id) {
+  if (!confirm('Excluir este item?')) return;
+  S.items = S.items.filter(i=>i.id!==id);
+  S.adminTab='list'; S.editItem=null; S.formData=null;
+  render();
+  try { await saveData(); toast('Item removido!','warn'); }
+  catch(e) { toast('Erro ao salvar.','err'); }
+}
+
+// ─── HISTORY ─────────────────────────────────────────────────────────────────
+function history() {
+  const fil = S.histFilter;
+  const movs = fil==='all'?S.movements:S.movements.filter(m=>m.type===fil);
+  return `<div class="fi">
+    <div class="hdr">
+      <button onclick="go('home')" class="btn btn-ghost" style="padding:8px 14px;font-size:18px">←</button>
+      <div style="font-family:'Barlow Condensed';font-weight:800;font-size:19px;letter-spacing:1px">📋 HISTÓRICO</div>
+    </div>
+    <div class="body">
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="filter-tab ${fil==='all'?'active':''}" onclick="S.histFilter='all';render()">Todos</button>
+        <button class="filter-tab ${fil==='out'?'active':''}" onclick="S.histFilter='out';render()">Retiradas</button>
+        <button class="filter-tab ${fil==='in'?'active':''}" onclick="S.histFilter='in';render()">Entradas</button>
+      </div>
+      ${movs.length===0
+        ?`<div style="text-align:center;padding:50px;color:var(--mut)"><div style="font-size:36px;margin-bottom:8px">📋</div>Nenhuma movimentação.</div>`
+        :movs.map(m=>`<div class="mov-row" style="border-left:3px solid ${m.type==='out'?'var(--dan)':'var(--suc)'}">
+          <div style="flex:1;overflow:hidden;margin-right:12px">
+            <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px">${m.type==='out'?'📤':'📥'} ${esc(m.itemName)}</div>
+            <div style="font-size:12px;color:var(--mut);margin-top:2px">${esc(m.modelName)} · <strong style="color:var(--txt)">${esc(m.user)}</strong></div>
+            <div style="font-size:11px;color:var(--mut);margin-top:2px">${fmt(m.ts)}</div>
+          </div>
+          <div style="font-family:'Barlow Condensed';font-weight:900;font-size:28px;color:${m.type==='out'?'var(--dan)':'var(--suc)'};flex-shrink:0">${m.type==='out'?'-':'+'}${m.qty}</div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ─── BOOT ────────────────────────────────────────────────────────────────────
+(async () => {
+  try {
+    await loadData();
+    document.getElementById('loading-overlay').style.display='none';
+    render();
+  } catch(e) {
+    document.getElementById('loading-overlay').innerHTML = `
+      <div style="font-size:40px">⚠️</div>
+      <div style="font-family:'Barlow Condensed';font-size:22px;color:var(--acc)">ERRO DE CONEXÃO</div>
+      <div style="color:var(--mut);font-size:14px;max-width:300px;text-align:center;line-height:1.6">
+        Não foi possível conectar ao servidor.<br>
+        Verifique se o n8n está ativo e tente novamente.
+      </div>
+      <button onclick="location.reload()" class="btn btn-acc" style="font-size:16px;padding:12px 24px;margin-top:8px">TENTAR NOVAMENTE</button>`;
+  }
+})();
+</script>
+</body>
+</html>
