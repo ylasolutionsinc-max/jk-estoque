@@ -7,10 +7,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{--bg:#0f0f0f;--surf:#1a1a1a;--card:#222;--brd:#333;--acc:#f59e0b;--dan:#ef4444;--suc:#22c55e;--txt:#f0f0f0;--mut:#777;--kit:#8b5cf6}
+:root{
+  --bg:#0a1628;
+  --surf:#0f2040;
+  --card:#162647;
+  --brd:#1e3260;
+  --acc:#f5a800;
+  --accD:#d48f00;
+  --dan:#ef4444;
+  --suc:#22c55e;
+  --txt:#f0f4ff;
+  --mut:#5b7aaa;
+  --kit:#a78bfa;
+  --hdr:#0d1e3c;
+}
 html,body{min-height:100%;background:var(--bg);color:var(--txt);font-family:'Barlow',sans-serif}
 input,textarea,select{font-family:'Barlow',sans-serif!important;background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:11px 14px;color:var(--txt);font-size:15px;outline:none;width:100%;box-sizing:border-box}
-input:focus,textarea:focus,select:focus{border-color:var(--acc)}
+input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 2px rgba(245,168,0,.15)}
 select option{background:var(--card)}
 button{cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;border:none;border-radius:8px;letter-spacing:.5px}
 button:active{opacity:.75;transform:scale(.97)}
@@ -19,54 +32,72 @@ button:active{opacity:.75;transform:scale(.97)}
 @keyframes fi{from{opacity:0}to{opacity:1}}
 @keyframes spin{to{transform:rotate(360deg)}}
 #app{min-height:100vh}
-.hdr{background:var(--surf);border-bottom:1px solid var(--brd);padding:13px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.hdr{background:var(--hdr);border-bottom:2px solid var(--acc);padding:13px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
 .body{max-width:560px;margin:0 auto;padding:16px;padding-bottom:80px}
 .card{background:var(--card);border:1px solid var(--brd);border-radius:12px}
-.btn{border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-weight:700;cursor:pointer;transition:opacity .15s}
-.btn-acc{background:var(--acc);color:#000}
-.btn-ghost{background:var(--surf);color:var(--mut);border:1px solid var(--brd)}
+.btn{border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-weight:700;cursor:pointer;transition:all .15s}
+.btn-acc{background:var(--acc);color:#0a1628}
+.btn-acc:hover{background:var(--accD)}
+.btn-ghost{background:rgba(255,255,255,.06);color:var(--mut);border:1px solid var(--brd)}
+.btn-ghost:hover{border-color:var(--acc);color:var(--acc)}
 .btn-dan{background:var(--dan);color:#fff}
 .btn-suc{background:var(--suc);color:#fff}
 .btn-kit{background:var(--kit);color:#fff}
 .lbl{font-size:11px;color:var(--mut);letter-spacing:1.5px;margin-bottom:6px;font-family:'Barlow Condensed';font-weight:700;display:block;text-transform:uppercase}
-.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--brd);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
-.bnav-btn{flex:1;background:transparent;border:none;padding:10px 0 8px;color:var(--mut);cursor:pointer;font-family:'Barlow Condensed';font-size:10px;letter-spacing:1px;display:flex;flex-direction:column;align-items:center;gap:3px;border-top:2px solid transparent}
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--hdr);border-top:2px solid var(--brd);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
+.bnav-btn{flex:1;background:transparent;border:none;padding:10px 0 8px;color:var(--mut);cursor:pointer;font-family:'Barlow Condensed';font-size:10px;letter-spacing:1px;display:flex;flex-direction:column;align-items:center;gap:3px;border-top:2px solid transparent;transition:all .15s}
 .bnav-btn.active{color:var(--acc);border-top-color:var(--acc)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .su{animation:su .28s ease}
 .fi{animation:fi .3s ease}
-#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:11px 22px;border-radius:10px;font-family:'Barlow Condensed';font-weight:700;font-size:15px;z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.5);animation:su .25s ease;display:none}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:11px 22px;border-radius:10px;font-family:'Barlow Condensed';font-weight:700;font-size:15px;z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.6);animation:su .25s ease;display:none}
 #loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:1000}
 .spinner{width:44px;height:44px;border:3px solid var(--brd);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite}
 .model-pill{padding:9px 14px;font-size:14px;font-family:'Barlow Condensed';font-weight:700;border-radius:8px;border:1px solid var(--brd);background:var(--card);color:var(--txt);cursor:pointer;transition:all .15s}
-.model-pill.active{background:var(--acc);color:#000;border-color:var(--acc)}
-.filter-tab{flex:1;border-radius:8px;padding:9px 8px;font-size:13px;font-family:'Barlow Condensed';font-weight:700;border:1px solid var(--brd);background:var(--card);color:var(--txt);cursor:pointer}
-.filter-tab.active{background:var(--acc);color:#000;border-color:var(--acc)}
-.mov-row{padding:12px 14px;margin-bottom:8px;border-radius:12px;border:1px solid var(--brd);background:var(--card);display:flex;justify-content:space-between;align-items:flex-start}
+.model-pill:hover{border-color:var(--acc)}
+.model-pill.active{background:var(--acc);color:#0a1628;border-color:var(--acc)}
+.filter-tab{flex:1;border-radius:8px;padding:9px 8px;font-size:13px;font-family:'Barlow Condensed';font-weight:700;border:1px solid var(--brd);background:var(--card);color:var(--txt);cursor:pointer;transition:all .15s}
+.filter-tab:hover{border-color:var(--acc)}
+.filter-tab.active{background:var(--acc);color:#0a1628;border-color:var(--acc)}
+.mov-row{padding:12px 14px;margin-bottom:8px;border-radius:12px;border:1px solid var(--brd);background:var(--card);display:flex;justify-content:space-between;align-items:flex-start;transition:border-color .15s}
+.mov-row:hover{border-color:var(--brd)}
 .badge{font-size:9px;padding:2px 5px;border-radius:4px;font-family:'Barlow Condensed';font-weight:700;position:absolute;top:6px;right:6px}
 .card-hover{cursor:pointer;transition:all .2s}
-.card-hover:hover{border-color:var(--acc);transform:translateY(-1px)}
+.card-hover:hover{border-color:var(--acc);transform:translateY(-2px);box-shadow:0 4px 20px rgba(245,168,0,.1)}
 .kit-badge{background:var(--kit);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;font-family:'Barlow Condensed';font-weight:700}
-.comp-row{background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;gap:8px;align-items:center}
+.comp-row{background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;gap:8px;align-items:flex-start}
+.logo-text{font-family:'Barlow Condensed';font-weight:900;letter-spacing:3px}
+.inp{background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:10px 14px;color:var(--txt);font-size:14px;outline:none;width:100%}
+.inp:focus{border-color:var(--acc);box-shadow:0 0 0 2px rgba(245,168,0,.15)}
+.section-div{border-top:1px solid var(--brd);margin:16px 0}
 </style>
 </head>
 <body>
+
 <div id="loading-overlay">
-  <div style="font-size:40px">⚙️</div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+      <circle cx="24" cy="24" r="22" fill="#0f2040" stroke="#f5a800" stroke-width="2"/>
+      <text x="24" y="30" text-anchor="middle" fill="#f5a800" font-family="Barlow Condensed" font-weight="900" font-size="16">JK</text>
+    </svg>
+    <div>
+      <div style="font-family:'Barlow Condensed';font-weight:900;font-size:22px;color:var(--acc);letter-spacing:3px">JK FIXADORES</div>
+      <div style="font-size:11px;color:var(--mut);letter-spacing:2px">CONTROLE DE ESTOQUE</div>
+    </div>
+  </div>
   <div class="spinner"></div>
-  <div style="color:var(--mut);font-size:13px;font-family:monospace">conectando ao sistema...</div>
+  <div style="color:var(--mut);font-size:12px;font-family:monospace;margin-top:4px">carregando sistema...</div>
 </div>
+
 <div id="toast"></div>
 <div id="app"></div>
 
 <script>
-// ─── CONFIG ──────────────────────────────────────────────────────────────────
-const API = 'https://ambiente-n8n.zq7wss.easypanel.host/webhook/jk-v4';
-const USER_PASS  = 'JK123';   // senha padrão para vendedores
-const ADMIN_PASS = 'JK2024';  // senha admin
-const LOW_STOCK  = 5;
+const API       = 'https://ambiente-n8n.zq7wss.easypanel.host/webhook/jk-v4';
+const USER_PASS = 'JK123';
+const ADMIN_PASS= 'JK2024';
+const LOW_STOCK = 5;
 
-// ─── STATE ───────────────────────────────────────────────────────────────────
 let S = {
   screen:'login', user:null,
   items:[], movements:[],
@@ -75,23 +106,24 @@ let S = {
   histFilter:'all', srch:''
 };
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
-const genId = () => Math.random().toString(36).slice(2,9)+Date.now().toString(36);
-const totalQty = it => (it.models||[]).reduce((s,m)=>s+m.quantity,0);
-const fmt = iso => { const d=new Date(iso); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); };
-const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+const genId  = () => Math.random().toString(36).slice(2,9)+Date.now().toString(36);
+const totQty = it => (it.models||[]).reduce((s,m)=>s+m.quantity,0);
+const fmt    = iso => { const d=new Date(iso); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); };
+const esc    = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-// ─── TOAST ───────────────────────────────────────────────────────────────────
+// ── TOAST ────────────────────────────────────────────────────────────────────
 let _tt;
 function toast(msg,type='ok'){
   const el=document.getElementById('toast');
   el.textContent=msg;
-  el.style.background=type==='ok'?'#22c55e':type==='warn'?'#f59e0b':'#ef4444';
-  el.style.color='#000'; el.style.display='block';
+  el.style.background=type==='ok'?'#22c55e':type==='warn'?'#f5a800':'#ef4444';
+  el.style.color=type==='warn'?'#0a1628':'#fff';
+  el.style.display='block';
   clearTimeout(_tt); _tt=setTimeout(()=>el.style.display='none',3200);
 }
 
-// ─── API ─────────────────────────────────────────────────────────────────────
+// ── API ──────────────────────────────────────────────────────────────────────
 async function apiCall(body){
   const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(!res.ok) throw new Error('HTTP '+res.status);
@@ -100,39 +132,36 @@ async function apiCall(body){
 async function loadData(){const d=await apiCall({action:'get'});S.items=d.items||[];S.movements=d.movements||[];}
 async function saveData(){await apiCall({action:'save',items:S.items,movements:S.movements});}
 
-// ─── IMAGE ───────────────────────────────────────────────────────────────────
+// ── IMAGE ────────────────────────────────────────────────────────────────────
 function resizeImg(file){return new Promise(res=>{const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const M=420;let[w,h]=[img.width,img.height];if(w>M){h=h*M/w;w=M;}if(h>M){w=w*M/h;h=M;}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);res(c.toDataURL('image/jpeg',.65));};img.src=e.target.result;};r.readAsDataURL(file);});}
 
-// ─── NAV ─────────────────────────────────────────────────────────────────────
-function go(screen,id=null){
-  S.screen=screen;
-  if(id) S.activeId=id;
-  if(screen==='item'){S.selModel=null;S.qty=1;}
-  render(); window.scrollTo(0,0);
-}
+// ── NAV ──────────────────────────────────────────────────────────────────────
+function go(screen,id=null){S.screen=screen;if(id)S.activeId=id;if(screen==='item'){S.selModel=null;S.qty=1;}render();window.scrollTo(0,0);}
+function render(){const screens={login,home,item,admin,history};document.getElementById('app').innerHTML=(screens[S.screen]||login)();}
 
-// ─── RENDER ──────────────────────────────────────────────────────────────────
-function render(){
-  const screens={login,home,item,admin,history};
-  document.getElementById('app').innerHTML=(screens[S.screen]||login)();
-}
-
-// ─── LOGIN ───────────────────────────────────────────────────────────────────
+// ── LOGIN ────────────────────────────────────────────────────────────────────
 function login(){
-  return `<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px" class="fi">
-    <div style="text-align:center;margin-bottom:32px">
-      <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#92400e);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px">⚙️</div>
-      <div style="font-family:'Barlow Condensed';font-weight:900;font-size:34px;letter-spacing:3px;color:var(--acc)">JK FIXADORES</div>
-      <div style="color:var(--mut);font-size:13px;letter-spacing:2px;margin-top:4px">CONTROLE DE ESTOQUE</div>
+  return `<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,#0a1628 0%,#0d1e3c 100%)" class="fi">
+    <div style="text-align:center;margin-bottom:36px">
+      <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#f5a800 0%,#d48f00 100%);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 0 30px rgba(245,168,0,.3)">
+        <span style="font-family:'Barlow Condensed';font-weight:900;font-size:26px;color:#0a1628">JK</span>
+      </div>
+      <div class="logo-text" style="font-size:32px;color:var(--acc)">JK FIXADORES</div>
+      <div style="color:var(--mut);font-size:12px;letter-spacing:2.5px;margin-top:6px">CONTROLE DE ESTOQUE</div>
     </div>
-    <div class="card su" style="padding:28px;width:100%;max-width:340px">
+    <div class="card su" style="padding:28px;width:100%;max-width:340px;border-color:rgba(245,168,0,.2)">
       <label class="lbl">Seu Nome</label>
       <input id="ln" placeholder="Digite seu nome..." style="margin-bottom:14px" autofocus/>
-      <label class="lbl">Senha</label>
-      <input id="lp" type="password" placeholder="Digite sua senha..." style="margin-bottom:18px"
+      <label class="lbl">Senha de acesso</label>
+      <input id="lp" type="password" placeholder="••••••" style="margin-bottom:20px"
         onkeydown="if(event.key==='Enter')doLogin()"/>
       <button onclick="doLogin()" class="btn btn-acc" style="width:100%;font-size:18px;padding:14px">ENTRAR</button>
-      <div id="login-err" style="color:var(--dan);font-size:13px;text-align:center;margin-top:10px;display:none">Senha incorreta.</div>
+      <div id="login-err" style="color:var(--dan);font-size:13px;text-align:center;margin-top:10px;display:none">
+        ❌ Senha incorreta. Tente novamente.
+      </div>
+    </div>
+    <div style="margin-top:20px;font-size:12px;color:var(--mut);text-align:center;line-height:1.8">
+      Especialistas em fixadores e acessórios para energia solar
     </div>
   </div>`;
 }
@@ -145,60 +174,60 @@ function doLogin(){
   else{const e=document.getElementById('login-err');if(e)e.style.display='block';}
 }
 
-// ─── HOME ─────────────────────────────────────────────────────────────────────
-function home(){
+// ── HOME ─────────────────────────────────────────────────────────────────────
+function buildCards(srch){
   const filtered=S.items.filter(it=>
-    it.name.toLowerCase().includes(S.srch.toLowerCase())||
-    (it.category||'').toLowerCase().includes(S.srch.toLowerCase())
+    it.name.toLowerCase().includes(srch.toLowerCase())||
+    (it.category||'').toLowerCase().includes(srch.toLowerCase())
   );
+  if(S.items.length===0) return `<div style="text-align:center;padding:60px 20px;color:var(--mut)"><div style="font-size:48px;margin-bottom:12px">📦</div><div style="font-family:'Barlow Condensed';font-size:20px;margin-bottom:6px">Estoque vazio</div>${S.user&&S.user.isAdmin?'<p style="font-size:13px">Acesse Admin para cadastrar itens.</p>':''}</div>`;
+  if(filtered.length===0) return `<div style="text-align:center;padding:40px;color:var(--mut)">Nenhum item encontrado.</div>`;
   const cats=[...new Set(filtered.map(it=>it.category||'Geral'))];
-
-  const cardHtml=it=>{
-    const tot=totalQty(it);
-    const low=tot<=LOW_STOCK;
-    const qc=tot===0?'var(--dan)':low?'var(--acc)':'var(--txt)';
-    const isKit=it.isKit&&it.components&&it.components.length>0;
-    return `<div class="card card-hover" onclick="go('item','${it.id}')" style="overflow:hidden">
-      <div style="height:110px;background:var(--surf);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative">
-        ${it.image?`<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:36px">🔩</span>'}
-        ${tot===0?'<span class="badge" style="background:var(--dan);color:#fff">ESGOTADO</span>':low?'<span class="badge" style="background:var(--acc);color:#000">BAIXO</span>':''}
-      </div>
-      <div style="padding:10px 12px">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
-          <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px;line-height:1.2;flex:1">${esc(it.name)}</div>
-          ${isKit?'<span class="kit-badge">KIT</span>':''}
-        </div>
-        <div style="font-size:11px;color:var(--mut);margin-bottom:4px">${it.models.length} modelo${it.models.length>1?'s':''}</div>
-        <div style="font-family:'Barlow Condensed';font-weight:800;font-size:20px;color:${qc}">${tot}<span style="font-size:11px;font-weight:400;color:var(--mut);margin-left:3px">un</span></div>
-      </div>
-    </div>`;
-  };
-
-  const grid=cats.map(cat=>`
+  return cats.map(cat=>`
     <div style="margin-bottom:24px">
-      <div style="font-family:'Barlow Condensed';font-size:12px;color:var(--mut);letter-spacing:2.5px;margin-bottom:10px">— ${esc(cat)}</div>
+      <div style="font-family:'Barlow Condensed';font-size:12px;color:var(--acc);letter-spacing:3px;margin-bottom:10px;opacity:.7">— ${esc(cat)}</div>
       <div class="grid2">${filtered.filter(it=>(it.category||'Geral')===cat).map(cardHtml).join('')}</div>
     </div>`).join('');
+}
+function cardHtml(it){
+  const tot=totQty(it);
+  const low=tot<=LOW_STOCK;
+  const qc=tot===0?'var(--dan)':low?'var(--acc)':'var(--txt)';
+  const isKit=it.isKit&&(it.components||[]).length>0;
+  return `<div class="card card-hover" onclick="go('item','${it.id}')" style="overflow:hidden">
+    <div style="height:110px;background:var(--surf);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative">
+      ${it.image?`<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">`:`<div style="font-size:36px;opacity:.4">🔩</div>`}
+      ${tot===0?'<span class="badge" style="background:var(--dan);color:#fff">ESGOTADO</span>':low?'<span class="badge" style="background:var(--acc);color:#0a1628">BAIXO</span>':''}
+      ${isKit?'<span style="position:absolute;top:6px;left:6px;background:var(--kit);color:#fff;font-size:8px;padding:2px 5px;border-radius:3px;font-family:\'Barlow Condensed\';font-weight:700">KIT</span>':''}
+    </div>
+    <div style="padding:10px 12px">
+      <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px;line-height:1.2;margin-bottom:2px;color:var(--txt)">${esc(it.name)}</div>
+      <div style="font-size:11px;color:var(--mut);margin-bottom:4px">${it.models.length} modelo${it.models.length>1?'s':''}</div>
+      <div style="font-family:'Barlow Condensed';font-weight:800;font-size:20px;color:${qc}">${tot}<span style="font-size:11px;font-weight:400;color:var(--mut);margin-left:3px">un</span></div>
+    </div>
+  </div>`;
+}
 
-  const empty=S.items.length===0
-    ?`<div style="text-align:center;padding:60px 20px;color:var(--mut)"><div style="font-size:48px;margin-bottom:12px">📦</div><div style="font-family:'Barlow Condensed';font-size:20px;margin-bottom:6px">Estoque vazio</div>${S.user.isAdmin?'<p style="font-size:13px">Toque em Admin para cadastrar itens.</p>':''}</div>`
-    :filtered.length===0?`<div style="text-align:center;padding:40px;color:var(--mut)">Nenhum item encontrado.</div>`:'';
-
+function home(){
   return `<div>
     <div class="hdr" style="flex-direction:column;align-items:stretch;gap:10px">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-family:'Barlow Condensed';font-weight:900;font-size:22px;color:var(--acc);letter-spacing:2px">⚙️ JK FIXADORES</div>
-          <div style="font-size:12px;color:var(--mut)">Olá, <strong style="color:var(--txt)">${esc(S.user.name)}</strong>${S.user.isAdmin?' <span style="color:var(--acc)">· ADMIN</span>':''}</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#f5a800,#d48f00);display:flex;align-items:center;justify-content:center">
+            <span style="font-family:'Barlow Condensed';font-weight:900;font-size:13px;color:#0a1628">JK</span>
+          </div>
+          <div>
+            <div class="logo-text" style="font-size:18px;color:var(--acc)">JK FIXADORES</div>
+            <div style="font-size:11px;color:var(--mut)">Olá, <strong style="color:var(--txt)">${esc(S.user.name)}</strong>${S.user.isAdmin?' <span style="color:var(--acc)">· ADMIN</span>':''}</div>
+          </div>
         </div>
         <button onclick="doLogout()" class="btn btn-ghost" style="padding:7px 14px;font-size:13px">Sair</button>
       </div>
       <input id="srch-inp" class="inp" placeholder="🔍  Buscar produto..."
         value="${esc(S.srch)}"
-        oninput="S.srch=this.value; refreshHomeCards()"
-        style="background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:10px 14px;color:var(--txt);font-size:14px;outline:none;width:100%"/>
+        oninput="S.srch=this.value; document.getElementById('home-cards').innerHTML=buildCards(S.srch)"/>
     </div>
-    <div class="body"><div id="home-cards">${empty||grid}</div></div>
+    <div class="body"><div id="home-cards">${buildCards(S.srch)}</div></div>
     <div class="bnav">
       <button class="bnav-btn active" onclick="go('home')"><span style="font-size:18px">📦</span>Estoque</button>
       <button class="bnav-btn" onclick="go('history')"><span style="font-size:18px">📋</span>Histórico</button>
@@ -206,108 +235,63 @@ function home(){
     </div>
   </div>`;
 }
-
-// Atualiza só os cards sem re-renderizar o input (fix pesquisa)
-function refreshHomeCards(){
-  const el=document.getElementById('home-cards');
-  if(!el) return;
-  const filtered=S.items.filter(it=>
-    it.name.toLowerCase().includes(S.srch.toLowerCase())||
-    (it.category||'').toLowerCase().includes(S.srch.toLowerCase())
-  );
-  const cats=[...new Set(filtered.map(it=>it.category||'Geral'))];
-  const cardHtml=it=>{
-    const tot=totalQty(it);
-    const low=tot<=LOW_STOCK;
-    const qc=tot===0?'var(--dan)':low?'var(--acc)':'var(--txt)';
-    const isKit=it.isKit&&it.components&&it.components.length>0;
-    return `<div class="card card-hover" onclick="go('item','${it.id}')" style="overflow:hidden">
-      <div style="height:110px;background:var(--surf);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative">
-        ${it.image?`<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:36px">🔩</span>'}
-        ${tot===0?'<span class="badge" style="background:var(--dan);color:#fff">ESGOTADO</span>':low?'<span class="badge" style="background:var(--acc);color:#000">BAIXO</span>':''}
-      </div>
-      <div style="padding:10px 12px">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
-          <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px;line-height:1.2;flex:1">${esc(it.name)}</div>
-          ${isKit?'<span class="kit-badge">KIT</span>':''}
-        </div>
-        <div style="font-size:11px;color:var(--mut);margin-bottom:4px">${it.models.length} modelo${it.models.length>1?'s':''}</div>
-        <div style="font-family:'Barlow Condensed';font-weight:800;font-size:20px;color:${qc}">${tot}<span style="font-size:11px;font-weight:400;color:var(--mut);margin-left:3px">un</span></div>
-      </div>
-    </div>`;
-  };
-  if(S.items.length===0){el.innerHTML=`<div style="text-align:center;padding:60px 20px;color:var(--mut)"><div style="font-size:48px;margin-bottom:12px">📦</div><div style="font-family:'Barlow Condensed';font-size:20px">Estoque vazio</div></div>`;return;}
-  if(filtered.length===0){el.innerHTML=`<div style="text-align:center;padding:40px;color:var(--mut)">Nenhum item encontrado.</div>`;return;}
-  el.innerHTML=cats.map(cat=>`
-    <div style="margin-bottom:24px">
-      <div style="font-family:'Barlow Condensed';font-size:12px;color:var(--mut);letter-spacing:2.5px;margin-bottom:10px">— ${esc(cat)}</div>
-      <div class="grid2">${filtered.filter(it=>(it.category||'Geral')===cat).map(cardHtml).join('')}</div>
-    </div>`).join('');
-}
-
 function doLogout(){S.user=null;S.srch='';go('login');}
 
-// ─── ITEM DETAIL ─────────────────────────────────────────────────────────────
+// ── ITEM ─────────────────────────────────────────────────────────────────────
 function item(){
   const it=S.items.find(i=>i.id===S.activeId);
-  if(!it) return`<div class="body">Item não encontrado.<button onclick="go('home')" class="btn btn-ghost" style="padding:8px 14px;margin-top:8px">Voltar</button></div>`;
+  if(!it) return`<div class="body" style="padding-top:20px">Item não encontrado.<br><button onclick="go('home')" class="btn btn-ghost" style="padding:8px 14px;margin-top:12px">← Voltar</button></div>`;
   if(!S.selModel||!it.models.find(m=>m.id===S.selModel.id)) S.selModel=it.models[0]||null;
   const sel=S.selModel;
-  const isKit=it.isKit&&it.components&&it.components.length>0;
-
-  // verificar se tem estoque suficiente para todos os componentes do kit
+  const isKit=it.isKit&&(it.components||[]).length>0;
   let kitOk=true;
-  let kitInfo='';
   if(isKit&&sel){
-    const compLines=[];
     it.components.forEach(c=>{
-      const cItem=S.items.find(i=>i.id===c.itemId);
-      if(!cItem) return;
-      // resolve o modelo: se kit usa "mesmo modelo" do item pai, usa o modelo selecionado; senão usa o modelId fixo
-      const cModelId=c.sameModel?sel.id:c.modelId;
-      const cModel=cItem.models.find(m=>m.id===cModelId);
-      const needed=c.qty*S.qty;
-      const has=cModel?cModel.quantity:0;
-      const ok=has>=needed;
-      if(!ok) kitOk=false;
-      compLines.push(`${cItem.name} (${cModel?cModel.name:'?'}): precisa ${needed}, tem ${has} ${ok?'✓':'⚠️'}`);
+      const ci=S.items.find(i=>i.id===c.itemId);
+      if(!ci) return;
+      const cmId=c.sameModel?sel.id:c.modelId;
+      const cm=ci.models.find(m=>m.id===cmId);
+      if(!cm||cm.quantity<c.qty*S.qty) kitOk=false;
     });
-    kitInfo=compLines.join(' · ');
   }
-
   const canRem=sel&&sel.quantity>=S.qty&&S.qty>=1&&(isKit?kitOk:true);
   const qc=sel?(sel.quantity===0?'var(--dan)':sel.quantity<=LOW_STOCK?'var(--acc)':'var(--txt)'):'var(--txt)';
 
   return`<div class="fi">
     <div class="hdr">
       <button onclick="go('home')" class="btn btn-ghost" style="padding:8px 14px;font-size:18px">←</button>
-      <div style="font-family:'Barlow Condensed';font-weight:800;font-size:19px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(it.name)}</div>
+      <div style="font-family:'Barlow Condensed';font-weight:800;font-size:19px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--txt)">${esc(it.name)}</div>
       ${isKit?'<span class="kit-badge" style="font-size:11px;padding:3px 8px">KIT</span>':''}
     </div>
     <div class="body">
       <div class="card" style="height:200px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:14px">
-        ${it.image?`<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:64px">🔩</span>'}
+        ${it.image?`<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">`:`<div style="font-size:64px;opacity:.3">🔩</div>`}
       </div>
       ${it.description?`<div class="card" style="padding:12px 14px;margin-bottom:14px;font-size:14px;color:var(--mut);line-height:1.6">${esc(it.description)}</div>`:''}
-      ${isKit?`<div style="background:#1e1333;border:1px solid var(--kit);border-radius:10px;padding:12px 14px;margin-bottom:14px">
-        <div style="font-family:'Barlow Condensed';font-weight:700;font-size:13px;color:var(--kit);margin-bottom:8px">🔧 COMPOSIÇÃO DO KIT</div>
+      ${isKit?`<div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.3);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+        <div style="font-family:'Barlow Condensed';font-weight:700;font-size:13px;color:var(--kit);margin-bottom:8px;letter-spacing:1px">🔧 COMPOSIÇÃO DO KIT</div>
         ${it.components.map(c=>{
           const ci=S.items.find(i=>i.id===c.itemId);
           if(!ci) return '';
           const cmId=c.sameModel?(sel?sel.id:null):c.modelId;
           const cm=ci.models.find(m=>m.id===cmId);
-          return `<div style="font-size:13px;color:var(--txt);margin-bottom:4px">• ${esc(ci.name)} — ${cm?esc(cm.name):'modelo dinâmico'}: <strong>${c.qty}x</strong></div>`;
+          const needed=c.qty*S.qty;
+          const has=cm?cm.quantity:0;
+          const ok=has>=needed;
+          return `<div style="font-size:13px;color:${ok?'var(--txt)':'var(--dan)'};margin-bottom:4px;display:flex;justify-content:space-between">
+            <span>• ${esc(ci.name)} — ${cm?esc(cm.name):'dinâmico'}: ${c.qty}x</span>
+            <span style="font-size:12px;color:var(--mut)">${has} em estoque ${ok?'✓':'⚠️'}</span>
+          </div>`;
         }).join('')}
       </div>`:''}
       <label class="lbl">Selecione o Modelo</label>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
         ${it.models.map(m=>`<button class="model-pill ${sel&&sel.id===m.id?'active':''}" onclick="S.selModel=S.items.find(i=>i.id==='${it.id}').models.find(m=>m.id==='${m.id}');S.qty=1;render()">${esc(m.name)} <span style="font-size:11px;opacity:.7">(${m.quantity})</span></button>`).join('')}
       </div>
-      ${sel?`<div class="card" style="padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      ${sel?`<div class="card" style="padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid var(--acc)">
         <div><div style="font-family:'Barlow Condensed';font-weight:700;font-size:17px">${esc(sel.name)}</div><div style="font-size:12px;color:var(--mut);margin-top:2px">em estoque</div></div>
         <div style="font-family:'Barlow Condensed';font-weight:900;font-size:36px;color:${qc}">${sel.quantity}<span style="font-size:13px;font-weight:400;color:var(--mut);margin-left:4px">${esc(sel.unit)}</span></div>
       </div>`:''}
-      ${isKit&&kitInfo?`<div style="background:var(--surf);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--mut);line-height:1.7">${kitInfo}</div>`:''}
       <label class="lbl">Quantidade</label>
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px">
         <button onclick="S.qty=Math.max(1,S.qty-1);render()" class="btn btn-ghost" style="width:48px;height:48px;font-size:22px;flex-shrink:0">−</button>
@@ -321,7 +305,7 @@ function item(){
         ${S.user.isAdmin?`<button onclick="handleAdjust('in')" class="btn btn-suc" style="flex:1;font-size:18px;padding:14px">📥</button>`:''}
       </div>
       ${!canRem&&sel&&!isKit&&sel.quantity<S.qty?`<p style="font-size:13px;color:var(--dan);text-align:center;margin-top:8px">Estoque insuficiente. Disponível: ${sel.quantity} ${esc(sel.unit)}</p>`:''}
-      ${!canRem&&isKit&&!kitOk?`<p style="font-size:13px;color:var(--dan);text-align:center;margin-top:8px">Estoque insuficiente em um ou mais componentes do kit.</p>`:''}
+      ${!canRem&&isKit&&!kitOk?`<p style="font-size:13px;color:var(--dan);text-align:center;margin-top:8px">⚠️ Estoque insuficiente em um ou mais componentes.</p>`:''}
     </div>
   </div>`;
 }
@@ -330,56 +314,52 @@ async function handleAdjust(type){
   const it=S.items.find(i=>i.id===S.activeId);
   const sel=S.selModel;
   if(!it||!sel||S.qty<1) return;
-  const isKit=it.isKit&&it.components&&it.components.length>0;
-  if(type==='out'&&sel.quantity<S.qty&&!isKit) return toast('Estoque insuficiente!','err');
+  const isKit=it.isKit&&(it.components||[]).length>0;
   const delta=type==='out'?-S.qty:S.qty;
   const newMovs=[...S.movements];
 
   if(isKit&&type==='out'){
-    // Deduzir cada componente do kit
     let allOk=true;
     it.components.forEach(c=>{
-      const cItem=S.items.find(i=>i.id===c.itemId);
-      if(!cItem) return;
+      const ci=S.items.find(i=>i.id===c.itemId);
+      if(!ci) return;
       const cmId=c.sameModel?sel.id:c.modelId;
-      const cModel=cItem.models.find(m=>m.id===cmId);
-      if(!cModel||cModel.quantity<c.qty*S.qty) allOk=false;
+      const cm=ci.models.find(m=>m.id===cmId);
+      if(!cm||cm.quantity<c.qty*S.qty) allOk=false;
     });
     if(!allOk) return toast('Estoque insuficiente nos componentes!','err');
-
     S.items=S.items.map(i=>{
       const comp=it.components.find(c=>c.itemId===i.id);
       if(!comp) return i;
       const cmId=comp.sameModel?sel.id:comp.modelId;
       return {...i,models:i.models.map(m=>m.id!==cmId?m:{...m,quantity:Math.max(0,m.quantity-comp.qty*S.qty)})};
     });
-    // Movimento do kit em si
     newMovs.unshift({id:genId(),ts:new Date().toISOString(),user:S.user.name,itemId:it.id,itemName:it.name,modelId:sel.id,modelName:sel.name,qty:S.qty,type:'out',isKit:true});
-    // Movimentos dos componentes
     it.components.forEach(c=>{
-      const cItem=S.items.find(i=>i.id===c.itemId);
-      if(!cItem) return;
+      const ci=S.items.find(i=>i.id===c.itemId);
+      if(!ci) return;
       const cmId=c.sameModel?sel.id:c.modelId;
-      const cModel=cItem.models.find(m=>m.id===cmId);
-      newMovs.unshift({id:genId(),ts:new Date().toISOString(),user:S.user.name,itemId:cItem.id,itemName:cItem.name,modelId:cmId,modelName:cModel?cModel.name:'?',qty:c.qty*S.qty,type:'out',kitParent:it.name});
+      const cm=ci.models.find(m=>m.id===cmId);
+      newMovs.unshift({id:genId(),ts:new Date().toISOString(),user:S.user.name,itemId:ci.id,itemName:ci.name,modelId:cmId,modelName:cm?cm.name:'?',qty:c.qty*S.qty,type:'out',kitParent:it.name});
     });
   } else {
-    // Item normal
+    if(type==='out'&&sel.quantity<S.qty) return toast('Estoque insuficiente!','err');
     S.items=S.items.map(i=>i.id!==it.id?i:{...i,models:i.models.map(m=>m.id!==sel.id?m:{...m,quantity:Math.max(0,m.quantity+delta)})});
     newMovs.unshift({id:genId(),ts:new Date().toISOString(),user:S.user.name,itemId:it.id,itemName:it.name,modelId:sel.id,modelName:sel.name,qty:S.qty,type});
   }
 
   S.movements=newMovs;
+  const savedQty=S.qty;
   S.qty=1;
   render();
   try{
     await saveData();
     const word=type==='out'?'retirado(s)':'adicionado(s)';
-    toast(`${S.qty===1?1:S.qty} × ${sel.name} ${word}!`,type==='out'?'warn':'ok');
+    toast(`${savedQty} × ${esc(sel.name)} ${word}!`,type==='out'?'warn':'ok');
   }catch(e){toast('Erro ao salvar. Verifique conexão.','err');}
 }
 
-// ─── ADMIN ───────────────────────────────────────────────────────────────────
+// ── ADMIN ────────────────────────────────────────────────────────────────────
 function admin(){
   return`<div>
     <div class="hdr">
@@ -394,46 +374,34 @@ function backAdminList(){S.adminTab='list';S.editItem=null;S.formData=null;rende
 function adminList(){
   return`<div class="su">
     <button onclick="openNewItem()" class="btn btn-acc" style="width:100%;font-size:17px;padding:14px;margin-bottom:10px">+ CADASTRAR NOVO ITEM</button>
-    <button onclick="clearAllData()" class="btn" style="width:100%;font-size:14px;padding:11px;margin-bottom:20px;background:transparent;color:var(--dan);border:1px solid var(--dan)">🗑 Limpar todos os dados de teste</button>
+    <button onclick="clearAllData()" class="btn" style="width:100%;font-size:14px;padding:11px;margin-bottom:20px;background:transparent;color:var(--dan);border:1px solid rgba(239,68,68,.4);border-radius:8px">🗑 Limpar todos os dados de teste</button>
     ${S.items.length===0?`<div style="text-align:center;padding:40px;color:var(--mut)">Nenhum item cadastrado.</div>`:
       S.items.map(it=>`<div class="card" style="padding:13px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
         <div style="width:46px;height:46px;background:var(--surf);border-radius:8px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
-          ${it.image?`<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:22px">🔩</span>'}
+          ${it.image?`<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:22px;opacity:.4">🔩</span>'}
         </div>
         <div style="flex:1;overflow:hidden">
           <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px">
             ${esc(it.name)} ${it.isKit?'<span class="kit-badge">KIT</span>':''}
           </div>
-          <div style="font-size:12px;color:var(--mut)">${it.models.length} modelo(s) · ${totalQty(it)} un total</div>
+          <div style="font-size:12px;color:var(--mut)">${it.models.length} modelo(s) · ${totQty(it)} un total</div>
         </div>
         <button onclick="openEditItem('${it.id}')" class="btn btn-ghost" style="font-size:13px;padding:7px 12px">EDITAR</button>
       </div>`).join('')}
   </div>`;
 }
 
-function openNewItem(){
-  S.editItem=null;
-  S.formData={name:'',cat:'',desc:'',img:'',isKit:false,components:[],models:[{id:genId(),name:'',quantity:0,unit:'un'}]};
-  S.adminTab='form'; render();
-}
+function openNewItem(){S.editItem=null;S.formData={name:'',cat:'',desc:'',img:'',isKit:false,components:[],models:[{id:genId(),name:'',quantity:0,unit:'un'}]};S.adminTab='form';render();}
 function openEditItem(id){
   S.editItem=S.items.find(i=>i.id===id);
-  S.formData={
-    name:S.editItem.name,cat:S.editItem.category||'',desc:S.editItem.description||'',
-    img:S.editItem.image||'',isKit:S.editItem.isKit||false,
-    components:(S.editItem.components||[]).map(c=>({...c})),
-    models:S.editItem.models.map(m=>({...m}))
-  };
-  S.adminTab='form'; render();
+  S.formData={name:S.editItem.name,cat:S.editItem.category||'',desc:S.editItem.description||'',img:S.editItem.image||'',isKit:S.editItem.isKit||false,components:(S.editItem.components||[]).map(c=>({...c})),models:S.editItem.models.map(m=>({...m}))};
+  S.adminTab='form';render();
 }
-
 function getF(){return S.formData||(S.formData={name:'',cat:'',desc:'',img:'',isKit:false,components:[],models:[{id:genId(),name:'',quantity:0,unit:'un'}]});}
 
 function adminForm(){
   const f=getF();
-  // Itens disponíveis para componentes (excluindo o item sendo editado)
   const availItems=S.items.filter(i=>!S.editItem||i.id!==S.editItem.id);
-
   return`<div class="su">
     <div style="font-family:'Barlow Condensed';font-weight:800;font-size:22px;color:var(--acc);margin-bottom:20px">${S.editItem?'EDITAR ITEM':'NOVO ITEM'}</div>
     <label class="lbl">Nome do Item *</label>
@@ -446,21 +414,20 @@ function adminForm(){
     <input type="file" id="fimg" accept="image/*" style="display:none" onchange="handleImgUpload(this)"/>
     <div style="margin-bottom:18px">
       ${f.img
-        ?`<div style="display:flex;align-items:center;gap:12px"><img src="${f.img}" style="width:100px;height:75px;object-fit:cover;border-radius:8px;border:1px solid var(--brd)"/><button onclick="getF().img='';render()" class="btn" style="background:transparent;color:var(--dan);font-size:13px;padding:6px 10px">Remover</button></div>`
+        ?`<div style="display:flex;align-items:center;gap:12px"><img src="${f.img}" style="width:100px;height:75px;object-fit:cover;border-radius:8px;border:1px solid var(--brd)"/><button onclick="getF().img='';render()" class="btn" style="background:transparent;color:var(--dan);font-size:13px;padding:6px 10px;border:none">Remover</button></div>`
         :`<button onclick="document.getElementById('fimg').click()" class="btn btn-ghost" style="font-size:14px;padding:12px 20px;border-style:dashed">📷 Adicionar Foto</button>`}
     </div>
 
-    <!-- TOGGLE KIT -->
-    <div style="background:var(--surf);border:1px solid var(--brd);border-radius:10px;padding:14px;margin-bottom:16px">
+    <div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.25);border-radius:10px;padding:14px;margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${f.isKit?'14px':'0'}">
         <div>
           <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px;color:var(--kit)">🔧 Item Composto (Kit)</div>
-          <div style="font-size:12px;color:var(--mut);margin-top:2px">Ao retirar, deduz automaticamente os componentes</div>
+          <div style="font-size:12px;color:var(--mut);margin-top:2px">Ao retirar deduz os componentes automaticamente</div>
         </div>
-        <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer">
+        <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;flex-shrink:0">
           <input type="checkbox" ${f.isKit?'checked':''} onchange="getF().isKit=this.checked;render()" style="opacity:0;width:0;height:0;position:absolute"/>
           <span style="position:absolute;inset:0;background:${f.isKit?'var(--kit)':'var(--brd)'};border-radius:12px;transition:.3s">
-            <span style="position:absolute;top:3px;left:${f.isKit?'23px':'3px'};width:18px;height:18px;background:#fff;border-radius:50%;transition:.3s"></span>
+            <span style="position:absolute;top:3px;left:${f.isKit?'23px':'3px'};width:18px;height:18px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.3)"></span>
           </span>
         </label>
       </div>
@@ -468,7 +435,6 @@ function adminForm(){
         <div id="comp-list">
           ${f.components.map((c,ci)=>{
             const ci_item=S.items.find(i=>i.id===c.itemId);
-            const ci_model=ci_item?.models.find(m=>m.id===c.modelId);
             return`<div class="comp-row">
               <div style="flex:1">
                 <select onchange="updateComp(${ci},'itemId',this.value);updateComp(${ci},'modelId','');render()" style="font-size:13px;padding:7px 10px;margin-bottom:6px">
@@ -480,7 +446,7 @@ function adminForm(){
                   ${ci_item.models.map(m=>`<option value="${m.id}" ${c.modelId===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}
                 </select>
                 <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut);cursor:pointer">
-                  <input type="checkbox" ${c.sameModel?'checked':''} onchange="updateComp(${ci},'sameModel',this.checked)" style="width:auto"/>
+                  <input type="checkbox" ${c.sameModel?'checked':''} onchange="updateComp(${ci},'sameModel',this.checked)" style="width:auto;accent-color:var(--kit)"/>
                   Usar mesmo modelo do item pai
                 </label>`:''}
               </div>
@@ -488,11 +454,11 @@ function adminForm(){
                 <label style="font-size:10px;color:var(--mut)">Qtd</label>
                 <input type="number" min="1" value="${c.qty||1}" onchange="updateComp(${ci},'qty',parseInt(this.value)||1)" style="width:60px;text-align:center;font-size:15px;padding:6px"/>
               </div>
-              <button onclick="removeComp(${ci})" style="background:none;border:none;color:var(--dan);font-size:22px;padding:0 4px;flex-shrink:0;cursor:pointer">×</button>
+              <button onclick="removeComp(${ci})" style="background:none;border:none;color:var(--dan);font-size:22px;padding:0 4px;flex-shrink:0;cursor:pointer;margin-top:4px">×</button>
             </div>`;
           }).join('')}
         </div>
-        <button onclick="addComp()" class="btn" style="background:var(--surf);color:var(--kit);border:1px dashed var(--kit);width:100%;font-size:13px;padding:10px;margin-top:4px">+ Adicionar componente</button>`:''}
+        <button onclick="addComp()" class="btn" style="background:transparent;color:var(--kit);border:1px dashed rgba(167,139,250,.4);width:100%;font-size:13px;padding:10px;margin-top:4px">+ Adicionar componente</button>`:''}
     </div>
 
     <label class="lbl">Modelos / Variações *</label>
@@ -508,16 +474,16 @@ function adminForm(){
     </div>
     <button onclick="getF().models.push({id:genId(),name:'',quantity:0,unit:'un'});render()" class="btn btn-ghost" style="width:100%;font-size:13px;padding:10px;margin-bottom:22px;border-style:dashed">+ Adicionar modelo</button>
     <button onclick="saveItem()" class="btn btn-acc" style="width:100%;font-size:18px;padding:14px">SALVAR ITEM</button>
-    ${S.editItem?`<button onclick="deleteItem('${S.editItem.id}')" class="btn" style="background:transparent;color:var(--dan);width:100%;font-size:14px;margin-top:10px;padding:10px">🗑 Excluir este item</button>`:''}
+    ${S.editItem?`<button onclick="deleteItem('${S.editItem.id}')" class="btn" style="background:transparent;color:var(--dan);width:100%;font-size:14px;margin-top:10px;padding:10px;border:none">🗑 Excluir este item</button>`:''}
   </div>`;
 }
 
 function addComp(){getF().components.push({itemId:'',modelId:'',qty:1,sameModel:false});render();}
 function removeComp(i){const f=getF();f.components.splice(i,1);render();}
-function updateComp(i,k,v){const f=getF();f.components[i][k]=v;}
+function updateComp(i,k,v){const f=getF();if(f.components[i])f.components[i][k]=v;}
 
 async function handleImgUpload(inp){
-  const file=inp.files[0]; if(!file) return;
+  const file=inp.files[0];if(!file)return;
   try{getF().img=await resizeImg(file);render();}catch(e){toast('Erro ao processar imagem','err');}
 }
 
@@ -528,12 +494,7 @@ async function saveItem(){
   const fd=document.getElementById('fd');if(fd)f.desc=fd.value;
   if(!f.name.trim()) return toast('Informe o nome do item!','err');
   if(f.models.some(m=>!m.name.trim())) return toast('Todos os modelos precisam de nome!','err');
-  const it={
-    id:S.editItem?.id||genId(),name:f.name.trim(),category:f.cat.trim()||'Geral',
-    description:f.desc.trim(),image:f.img,
-    isKit:f.isKit,components:f.isKit?f.components.filter(c=>c.itemId):[],
-    models:f.models
-  };
+  const it={id:S.editItem?.id||genId(),name:f.name.trim(),category:f.cat.trim()||'Geral',description:f.desc.trim(),image:f.img,isKit:f.isKit,components:f.isKit?f.components.filter(c=>c.itemId):[],models:f.models};
   S.items=S.editItem?S.items.map(i=>i.id===it.id?it:i):[...S.items,it];
   S.adminTab='list';S.editItem=null;S.formData=null;
   render();
@@ -542,7 +503,7 @@ async function saveItem(){
 }
 
 async function deleteItem(id){
-  if(!confirm('Excluir este item?')) return;
+  if(!confirm('Excluir este item?'))return;
   S.items=S.items.filter(i=>i.id!==id);
   S.adminTab='list';S.editItem=null;S.formData=null;
   render();
@@ -551,16 +512,12 @@ async function deleteItem(id){
 }
 
 async function clearAllData(){
-  if(!confirm('⚠️ Apagar TODOS os itens e histórico? Não pode ser desfeito.')) return;
-  try{
-    await apiCall({action:'clear'});
-    await loadData();
-    toast('Dados apagados!','warn');
-    go('home');
-  }catch(e){toast('Erro ao limpar dados.','err');}
+  if(!confirm('⚠️ Apagar TODOS os itens e histórico? Não pode ser desfeito.'))return;
+  try{await apiCall({action:'clear'});await loadData();toast('Dados apagados!','warn');go('home');}
+  catch(e){toast('Erro ao limpar dados.','err');}
 }
 
-// ─── HISTORY ─────────────────────────────────────────────────────────────────
+// ── HISTORY ──────────────────────────────────────────────────────────────────
 function history(){
   const fil=S.histFilter;
   const movs=fil==='all'?S.movements:S.movements.filter(m=>m.type===fil);
@@ -589,7 +546,7 @@ function history(){
   </div>`;
 }
 
-// ─── BOOT ────────────────────────────────────────────────────────────────────
+// ── BOOT ─────────────────────────────────────────────────────────────────────
 (async()=>{
   try{
     await loadData();
@@ -599,7 +556,7 @@ function history(){
     document.getElementById('loading-overlay').innerHTML=`
       <div style="font-size:40px">⚠️</div>
       <div style="font-family:'Barlow Condensed';font-size:22px;color:var(--acc)">ERRO DE CONEXÃO</div>
-      <div style="color:var(--mut);font-size:14px;max-width:300px;text-align:center;line-height:1.6">Não foi possível conectar ao servidor.</div>
+      <div style="color:var(--mut);font-size:14px;max-width:300px;text-align:center;line-height:1.6">Não foi possível conectar ao servidor n8n.</div>
       <button onclick="location.reload()" class="btn btn-acc" style="font-size:16px;padding:12px 24px;margin-top:8px">TENTAR NOVAMENTE</button>`;
   }
 })();
