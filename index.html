@@ -7,10 +7,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{--bg:#0f0f0f;--surf:#1a1a1a;--card:#222;--brd:#333;--acc:#f59e0b;--dan:#ef4444;--suc:#22c55e;--txt:#f0f0f0;--mut:#777}
+:root{--bg:#0f0f0f;--surf:#1a1a1a;--card:#222;--brd:#333;--acc:#f59e0b;--dan:#ef4444;--suc:#22c55e;--txt:#f0f0f0;--mut:#777;--kit:#8b5cf6}
 html,body{min-height:100%;background:var(--bg);color:var(--txt);font-family:'Barlow',sans-serif}
 input,textarea,select{font-family:'Barlow',sans-serif!important;background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:11px 14px;color:var(--txt);font-size:15px;outline:none;width:100%;box-sizing:border-box}
-input:focus,textarea:focus{border-color:var(--acc)}
+input:focus,textarea:focus,select:focus{border-color:var(--acc)}
+select option{background:var(--card)}
 button{cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;border:none;border-radius:8px;letter-spacing:.5px}
 button:active{opacity:.75;transform:scale(.97)}
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--brd)}
@@ -26,6 +27,7 @@ button:active{opacity:.75;transform:scale(.97)}
 .btn-ghost{background:var(--surf);color:var(--mut);border:1px solid var(--brd)}
 .btn-dan{background:var(--dan);color:#fff}
 .btn-suc{background:var(--suc);color:#fff}
+.btn-kit{background:var(--kit);color:#fff}
 .lbl{font-size:11px;color:var(--mut);letter-spacing:1.5px;margin-bottom:6px;font-family:'Barlow Condensed';font-weight:700;display:block;text-transform:uppercase}
 .bnav{position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--brd);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
 .bnav-btn{flex:1;background:transparent;border:none;padding:10px 0 8px;color:var(--mut);cursor:pointer;font-family:'Barlow Condensed';font-size:10px;letter-spacing:1px;display:flex;flex-direction:column;align-items:center;gap:3px;border-top:2px solid transparent}
@@ -44,125 +46,79 @@ button:active{opacity:.75;transform:scale(.97)}
 .badge{font-size:9px;padding:2px 5px;border-radius:4px;font-family:'Barlow Condensed';font-weight:700;position:absolute;top:6px;right:6px}
 .card-hover{cursor:pointer;transition:all .2s}
 .card-hover:hover{border-color:var(--acc);transform:translateY(-1px)}
+.kit-badge{background:var(--kit);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;font-family:'Barlow Condensed';font-weight:700}
+.comp-row{background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;gap:8px;align-items:center}
 </style>
 </head>
 <body>
-
 <div id="loading-overlay">
   <div style="font-size:40px">⚙️</div>
   <div class="spinner"></div>
   <div style="color:var(--mut);font-size:13px;font-family:monospace">conectando ao sistema...</div>
 </div>
-
 <div id="toast"></div>
 <div id="app"></div>
 
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const API = 'https://ambiente-n8n.zq7wss.easypanel.host/webhook/jk-v4';
-const ADMIN_CODE = 'JK2024';
-const LOW_STOCK_THRESHOLD = 5;
+const USER_PASS  = 'JK123';   // senha padrão para vendedores
+const ADMIN_PASS = 'JK2024';  // senha admin
+const LOW_STOCK  = 5;
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let S = {
-  screen: 'login',
-  user: null,
-  items: [],
-  movements: [],
-  activeId: null,
-  adminTab: 'list',
-  editItem: null,
-  formData: null,
-  histFilter: 'all',
-  selModel: null,
-  qty: 1,
-  loading: false,
-  srch: ''
+  screen:'login', user:null,
+  items:[], movements:[],
+  activeId:null, selModel:null, qty:1,
+  adminTab:'list', editItem:null, formData:null,
+  histFilter:'all', srch:''
 };
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
-const genId = () => Math.random().toString(36).slice(2,9) + Date.now().toString(36);
-const totalQty = it => it.models.reduce((s,m) => s+m.quantity, 0);
-const fmt = iso => {
-  const d = new Date(iso);
-  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}) + ' ' +
-         d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-};
+const genId = () => Math.random().toString(36).slice(2,9)+Date.now().toString(36);
+const totalQty = it => (it.models||[]).reduce((s,m)=>s+m.quantity,0);
+const fmt = iso => { const d=new Date(iso); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); };
 const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 // ─── TOAST ───────────────────────────────────────────────────────────────────
-let _toastTimer;
-function toast(msg, type='ok') {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.style.background = type==='ok' ? '#22c55e' : type==='warn' ? '#f59e0b' : '#ef4444';
-  el.style.color = '#000';
-  el.style.display = 'block';
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => el.style.display='none', 3200);
+let _tt;
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.style.background=type==='ok'?'#22c55e':type==='warn'?'#f59e0b':'#ef4444';
+  el.style.color='#000'; el.style.display='block';
+  clearTimeout(_tt); _tt=setTimeout(()=>el.style.display='none',3200);
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
-async function apiCall(body) {
-  const res = await fetch(API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
+async function apiCall(body){
+  const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok) throw new Error('HTTP '+res.status);
   return res.json();
 }
-
-async function loadData() {
-  const data = await apiCall({ action: 'get' });
-  S.items = data.items || [];
-  S.movements = data.movements || [];
-}
-
-async function saveData() {
-  await apiCall({ action: 'save', items: S.items, movements: S.movements });
-}
+async function loadData(){const d=await apiCall({action:'get'});S.items=d.items||[];S.movements=d.movements||[];}
+async function saveData(){await apiCall({action:'save',items:S.items,movements:S.movements});}
 
 // ─── IMAGE ───────────────────────────────────────────────────────────────────
-function resizeImg(file) {
-  return new Promise(res => {
-    const r = new FileReader();
-    r.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        const M = 420;
-        let [w,h] = [img.width, img.height];
-        if (w > M) { h = h*M/w; w = M; }
-        if (h > M) { w = w*M/h; h = M; }
-        const c = document.createElement('canvas');
-        c.width = w; c.height = h;
-        c.getContext('2d').drawImage(img, 0, 0, w, h);
-        res(c.toDataURL('image/jpeg', 0.65));
-      };
-      img.src = e.target.result;
-    };
-    r.readAsDataURL(file);
-  });
-}
+function resizeImg(file){return new Promise(res=>{const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const M=420;let[w,h]=[img.width,img.height];if(w>M){h=h*M/w;w=M;}if(h>M){w=w*M/h;h=M;}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);res(c.toDataURL('image/jpeg',.65));};img.src=e.target.result;};r.readAsDataURL(file);});}
 
-// ─── NAVIGATION ──────────────────────────────────────────────────────────────
-function go(screen, id=null) {
-  S.screen = screen;
-  if (id) S.activeId = id;
-  if (screen === 'item') { S.selModel = null; S.qty = 1; }
-  render();
-  window.scrollTo(0,0);
+// ─── NAV ─────────────────────────────────────────────────────────────────────
+function go(screen,id=null){
+  S.screen=screen;
+  if(id) S.activeId=id;
+  if(screen==='item'){S.selModel=null;S.qty=1;}
+  render(); window.scrollTo(0,0);
 }
 
 // ─── RENDER ──────────────────────────────────────────────────────────────────
-function render() {
-  const screens = { login, home, item, admin, history };
-  document.getElementById('app').innerHTML = (screens[S.screen] || login)();
+function render(){
+  const screens={login,home,item,admin,history};
+  document.getElementById('app').innerHTML=(screens[S.screen]||login)();
 }
 
 // ─── LOGIN ───────────────────────────────────────────────────────────────────
-let _showAdm = false;
-function login() {
+function login(){
   return `<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px" class="fi">
     <div style="text-align:center;margin-bottom:32px">
       <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#92400e);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px">⚙️</div>
@@ -171,59 +127,62 @@ function login() {
     </div>
     <div class="card su" style="padding:28px;width:100%;max-width:340px">
       <label class="lbl">Seu Nome</label>
-      <input id="ln" placeholder="Digite seu nome..." style="margin-bottom:16px" autofocus/>
-      ${_showAdm ? `<label class="lbl" style="margin-top:4px">Código Admin</label>
-        <input id="lc" type="password" placeholder="Código de administrador..." style="margin-bottom:16px"/>` : ''}
+      <input id="ln" placeholder="Digite seu nome..." style="margin-bottom:14px" autofocus/>
+      <label class="lbl">Senha</label>
+      <input id="lp" type="password" placeholder="Digite sua senha..." style="margin-bottom:18px"
+        onkeydown="if(event.key==='Enter')doLogin()"/>
       <button onclick="doLogin()" class="btn btn-acc" style="width:100%;font-size:18px;padding:14px">ENTRAR</button>
-      <button onclick="toggleAdm()" class="btn" style="background:transparent;color:var(--mut);width:100%;font-size:12px;margin-top:8px;padding:8px">${_showAdm?'cancelar modo admin':'sou administrador'}</button>
+      <div id="login-err" style="color:var(--dan);font-size:13px;text-align:center;margin-top:10px;display:none">Senha incorreta.</div>
     </div>
   </div>`;
 }
-function toggleAdm() { _showAdm = !_showAdm; render(); }
-function doLogin() {
-  const n = document.getElementById('ln')?.value?.trim();
-  if (!n) return toast('Digite seu nome!','err');
-  const c = document.getElementById('lc')?.value || '';
-  S.user = { name: n, isAdmin: c === ADMIN_CODE };
-  _showAdm = false;
-  go('home');
+function doLogin(){
+  const n=document.getElementById('ln')?.value?.trim();
+  const p=document.getElementById('lp')?.value||'';
+  if(!n){toast('Digite seu nome!','err');return;}
+  if(p===ADMIN_PASS){S.user={name:n,isAdmin:true};go('home');}
+  else if(p===USER_PASS){S.user={name:n,isAdmin:false};go('home');}
+  else{const e=document.getElementById('login-err');if(e)e.style.display='block';}
 }
 
-// ─── HOME ────────────────────────────────────────────────────────────────────
-function home() {
-  const srch = S.srch || '';
-  const filtered = S.items.filter(it =>
-    it.name.toLowerCase().includes(srch.toLowerCase()) ||
-    (it.category||'').toLowerCase().includes(srch.toLowerCase())
+// ─── HOME ─────────────────────────────────────────────────────────────────────
+function home(){
+  const filtered=S.items.filter(it=>
+    it.name.toLowerCase().includes(S.srch.toLowerCase())||
+    (it.category||'').toLowerCase().includes(S.srch.toLowerCase())
   );
-  const cats = [...new Set(filtered.map(it => it.category||'Geral'))];
+  const cats=[...new Set(filtered.map(it=>it.category||'Geral'))];
 
-  const cardHtml = it => {
-    const tot = totalQty(it);
-    const low = tot <= LOW_STOCK_THRESHOLD;
-    const qColor = tot===0 ? 'var(--dan)' : low ? 'var(--acc)' : 'var(--txt)';
+  const cardHtml=it=>{
+    const tot=totalQty(it);
+    const low=tot<=LOW_STOCK;
+    const qc=tot===0?'var(--dan)':low?'var(--acc)':'var(--txt)';
+    const isKit=it.isKit&&it.components&&it.components.length>0;
     return `<div class="card card-hover" onclick="go('item','${it.id}')" style="overflow:hidden">
       <div style="height:110px;background:var(--surf);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative">
-        ${it.image ? `<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">` : '<span style="font-size:36px">🔩</span>'}
-        ${tot===0 ? '<span class="badge" style="background:var(--dan);color:#fff">ESGOTADO</span>' : low ? '<span class="badge" style="background:var(--acc);color:#000">BAIXO</span>' : ''}
+        ${it.image?`<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:36px">🔩</span>'}
+        ${tot===0?'<span class="badge" style="background:var(--dan);color:#fff">ESGOTADO</span>':low?'<span class="badge" style="background:var(--acc);color:#000">BAIXO</span>':''}
       </div>
       <div style="padding:10px 12px">
-        <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px;line-height:1.2;margin-bottom:2px">${esc(it.name)}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+          <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px;line-height:1.2;flex:1">${esc(it.name)}</div>
+          ${isKit?'<span class="kit-badge">KIT</span>':''}
+        </div>
         <div style="font-size:11px;color:var(--mut);margin-bottom:4px">${it.models.length} modelo${it.models.length>1?'s':''}</div>
-        <div style="font-family:'Barlow Condensed';font-weight:800;font-size:20px;color:${qColor}">${tot}<span style="font-size:11px;font-weight:400;color:var(--mut);margin-left:3px">un</span></div>
+        <div style="font-family:'Barlow Condensed';font-weight:800;font-size:20px;color:${qc}">${tot}<span style="font-size:11px;font-weight:400;color:var(--mut);margin-left:3px">un</span></div>
       </div>
     </div>`;
   };
 
-  const grid = cats.map(cat => `
+  const grid=cats.map(cat=>`
     <div style="margin-bottom:24px">
       <div style="font-family:'Barlow Condensed';font-size:12px;color:var(--mut);letter-spacing:2.5px;margin-bottom:10px">— ${esc(cat)}</div>
       <div class="grid2">${filtered.filter(it=>(it.category||'Geral')===cat).map(cardHtml).join('')}</div>
     </div>`).join('');
 
-  const empty = S.items.length===0
-    ? `<div style="text-align:center;padding:60px 20px;color:var(--mut)"><div style="font-size:48px;margin-bottom:12px">📦</div><div style="font-family:'Barlow Condensed';font-size:20px;margin-bottom:6px">Estoque vazio</div>${S.user.isAdmin?'<p style="font-size:13px">Toque em Admin para cadastrar itens.</p>':''}</div>`
-    : filtered.length===0 ? `<div style="text-align:center;padding:40px;color:var(--mut)">Nenhum item encontrado.</div>` : '';
+  const empty=S.items.length===0
+    ?`<div style="text-align:center;padding:60px 20px;color:var(--mut)"><div style="font-size:48px;margin-bottom:12px">📦</div><div style="font-family:'Barlow Condensed';font-size:20px;margin-bottom:6px">Estoque vazio</div>${S.user.isAdmin?'<p style="font-size:13px">Toque em Admin para cadastrar itens.</p>':''}</div>`
+    :filtered.length===0?`<div style="text-align:center;padding:40px;color:var(--mut)">Nenhum item encontrado.</div>`:'';
 
   return `<div>
     <div class="hdr" style="flex-direction:column;align-items:stretch;gap:10px">
@@ -234,48 +193,112 @@ function home() {
         </div>
         <button onclick="doLogout()" class="btn btn-ghost" style="padding:7px 14px;font-size:13px">Sair</button>
       </div>
-      <input class="inp" placeholder="🔍  Buscar produto..." value="${esc(srch)}" oninput="S.srch=this.value;render()" style="font-size:14px;padding:10px 14px"/>
+      <input id="srch-inp" class="inp" placeholder="🔍  Buscar produto..."
+        value="${esc(S.srch)}"
+        oninput="S.srch=this.value; refreshHomeCards()"
+        style="background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:10px 14px;color:var(--txt);font-size:14px;outline:none;width:100%"/>
     </div>
-    <div class="body">${empty||grid}</div>
+    <div class="body"><div id="home-cards">${empty||grid}</div></div>
     <div class="bnav">
       <button class="bnav-btn active" onclick="go('home')"><span style="font-size:18px">📦</span>Estoque</button>
       <button class="bnav-btn" onclick="go('history')"><span style="font-size:18px">📋</span>Histórico</button>
-      ${S.user.isAdmin?'<button class="bnav-btn" onclick="go(\'admin\')"><span style="font-size:18px">⚙️</span>Admin</button>':''}
+      ${S.user.isAdmin?`<button class="bnav-btn" onclick="go('admin')"><span style="font-size:18px">⚙️</span>Admin</button>`:''}
     </div>
   </div>`;
 }
 
-function doLogout() { S.user=null; S.srch=''; go('login'); }
-
-async function clearAllData() {
-  if (!confirm('⚠️ Tem certeza? Isso apagará TODOS os itens e histórico. Esta ação não pode ser desfeita.')) return;
-  try {
-    await apiCall({ action: 'clear' });
-    await loadData();
-    toast('Dados apagados com sucesso!', 'warn');
-    go('home');
-  } catch(e) { toast('Erro ao limpar dados.', 'err'); }
+// Atualiza só os cards sem re-renderizar o input (fix pesquisa)
+function refreshHomeCards(){
+  const el=document.getElementById('home-cards');
+  if(!el) return;
+  const filtered=S.items.filter(it=>
+    it.name.toLowerCase().includes(S.srch.toLowerCase())||
+    (it.category||'').toLowerCase().includes(S.srch.toLowerCase())
+  );
+  const cats=[...new Set(filtered.map(it=>it.category||'Geral'))];
+  const cardHtml=it=>{
+    const tot=totalQty(it);
+    const low=tot<=LOW_STOCK;
+    const qc=tot===0?'var(--dan)':low?'var(--acc)':'var(--txt)';
+    const isKit=it.isKit&&it.components&&it.components.length>0;
+    return `<div class="card card-hover" onclick="go('item','${it.id}')" style="overflow:hidden">
+      <div style="height:110px;background:var(--surf);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative">
+        ${it.image?`<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:36px">🔩</span>'}
+        ${tot===0?'<span class="badge" style="background:var(--dan);color:#fff">ESGOTADO</span>':low?'<span class="badge" style="background:var(--acc);color:#000">BAIXO</span>':''}
+      </div>
+      <div style="padding:10px 12px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+          <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px;line-height:1.2;flex:1">${esc(it.name)}</div>
+          ${isKit?'<span class="kit-badge">KIT</span>':''}
+        </div>
+        <div style="font-size:11px;color:var(--mut);margin-bottom:4px">${it.models.length} modelo${it.models.length>1?'s':''}</div>
+        <div style="font-family:'Barlow Condensed';font-weight:800;font-size:20px;color:${qc}">${tot}<span style="font-size:11px;font-weight:400;color:var(--mut);margin-left:3px">un</span></div>
+      </div>
+    </div>`;
+  };
+  if(S.items.length===0){el.innerHTML=`<div style="text-align:center;padding:60px 20px;color:var(--mut)"><div style="font-size:48px;margin-bottom:12px">📦</div><div style="font-family:'Barlow Condensed';font-size:20px">Estoque vazio</div></div>`;return;}
+  if(filtered.length===0){el.innerHTML=`<div style="text-align:center;padding:40px;color:var(--mut)">Nenhum item encontrado.</div>`;return;}
+  el.innerHTML=cats.map(cat=>`
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Barlow Condensed';font-size:12px;color:var(--mut);letter-spacing:2.5px;margin-bottom:10px">— ${esc(cat)}</div>
+      <div class="grid2">${filtered.filter(it=>(it.category||'Geral')===cat).map(cardHtml).join('')}</div>
+    </div>`).join('');
 }
 
-// ─── ITEM DETAIL ─────────────────────────────────────────────────────────────
-function item() {
-  const it = S.items.find(i => i.id===S.activeId);
-  if (!it) return `<div class="body">Item não encontrado. <button onclick="go('home')" class="btn btn-ghost" style="padding:8px 14px;margin-top:8px">Voltar</button></div>`;
-  if (!S.selModel || !it.models.find(m=>m.id===S.selModel.id)) S.selModel = it.models[0]||null;
-  const sel = S.selModel;
-  const canRem = sel && sel.quantity >= S.qty && S.qty >= 1;
-  const qc = sel ? (sel.quantity===0?'var(--dan)':sel.quantity<=LOW_STOCK_THRESHOLD?'var(--acc)':'var(--txt)') : 'var(--txt)';
+function doLogout(){S.user=null;S.srch='';go('login');}
 
-  return `<div class="fi">
+// ─── ITEM DETAIL ─────────────────────────────────────────────────────────────
+function item(){
+  const it=S.items.find(i=>i.id===S.activeId);
+  if(!it) return`<div class="body">Item não encontrado.<button onclick="go('home')" class="btn btn-ghost" style="padding:8px 14px;margin-top:8px">Voltar</button></div>`;
+  if(!S.selModel||!it.models.find(m=>m.id===S.selModel.id)) S.selModel=it.models[0]||null;
+  const sel=S.selModel;
+  const isKit=it.isKit&&it.components&&it.components.length>0;
+
+  // verificar se tem estoque suficiente para todos os componentes do kit
+  let kitOk=true;
+  let kitInfo='';
+  if(isKit&&sel){
+    const compLines=[];
+    it.components.forEach(c=>{
+      const cItem=S.items.find(i=>i.id===c.itemId);
+      if(!cItem) return;
+      // resolve o modelo: se kit usa "mesmo modelo" do item pai, usa o modelo selecionado; senão usa o modelId fixo
+      const cModelId=c.sameModel?sel.id:c.modelId;
+      const cModel=cItem.models.find(m=>m.id===cModelId);
+      const needed=c.qty*S.qty;
+      const has=cModel?cModel.quantity:0;
+      const ok=has>=needed;
+      if(!ok) kitOk=false;
+      compLines.push(`${cItem.name} (${cModel?cModel.name:'?'}): precisa ${needed}, tem ${has} ${ok?'✓':'⚠️'}`);
+    });
+    kitInfo=compLines.join(' · ');
+  }
+
+  const canRem=sel&&sel.quantity>=S.qty&&S.qty>=1&&(isKit?kitOk:true);
+  const qc=sel?(sel.quantity===0?'var(--dan)':sel.quantity<=LOW_STOCK?'var(--acc)':'var(--txt)'):'var(--txt)';
+
+  return`<div class="fi">
     <div class="hdr">
       <button onclick="go('home')" class="btn btn-ghost" style="padding:8px 14px;font-size:18px">←</button>
       <div style="font-family:'Barlow Condensed';font-weight:800;font-size:19px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(it.name)}</div>
+      ${isKit?'<span class="kit-badge" style="font-size:11px;padding:3px 8px">KIT</span>':''}
     </div>
     <div class="body">
       <div class="card" style="height:200px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:14px">
         ${it.image?`<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:64px">🔩</span>'}
       </div>
       ${it.description?`<div class="card" style="padding:12px 14px;margin-bottom:14px;font-size:14px;color:var(--mut);line-height:1.6">${esc(it.description)}</div>`:''}
+      ${isKit?`<div style="background:#1e1333;border:1px solid var(--kit);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+        <div style="font-family:'Barlow Condensed';font-weight:700;font-size:13px;color:var(--kit);margin-bottom:8px">🔧 COMPOSIÇÃO DO KIT</div>
+        ${it.components.map(c=>{
+          const ci=S.items.find(i=>i.id===c.itemId);
+          if(!ci) return '';
+          const cmId=c.sameModel?(sel?sel.id:null):c.modelId;
+          const cm=ci.models.find(m=>m.id===cmId);
+          return `<div style="font-size:13px;color:var(--txt);margin-bottom:4px">• ${esc(ci.name)} — ${cm?esc(cm.name):'modelo dinâmico'}: <strong>${c.qty}x</strong></div>`;
+        }).join('')}
+      </div>`:''}
       <label class="lbl">Selecione o Modelo</label>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
         ${it.models.map(m=>`<button class="model-pill ${sel&&sel.id===m.id?'active':''}" onclick="S.selModel=S.items.find(i=>i.id==='${it.id}').models.find(m=>m.id==='${m.id}');S.qty=1;render()">${esc(m.name)} <span style="font-size:11px;opacity:.7">(${m.quantity})</span></button>`).join('')}
@@ -284,6 +307,7 @@ function item() {
         <div><div style="font-family:'Barlow Condensed';font-weight:700;font-size:17px">${esc(sel.name)}</div><div style="font-size:12px;color:var(--mut);margin-top:2px">em estoque</div></div>
         <div style="font-family:'Barlow Condensed';font-weight:900;font-size:36px;color:${qc}">${sel.quantity}<span style="font-size:13px;font-weight:400;color:var(--mut);margin-left:4px">${esc(sel.unit)}</span></div>
       </div>`:''}
+      ${isKit&&kitInfo?`<div style="background:var(--surf);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--mut);line-height:1.7">${kitInfo}</div>`:''}
       <label class="lbl">Quantidade</label>
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px">
         <button onclick="S.qty=Math.max(1,S.qty-1);render()" class="btn btn-ghost" style="width:48px;height:48px;font-size:22px;flex-shrink:0">−</button>
@@ -291,39 +315,73 @@ function item() {
         <button onclick="S.qty=S.qty+1;render()" class="btn btn-ghost" style="width:48px;height:48px;font-size:22px;flex-shrink:0">+</button>
       </div>
       <div style="display:flex;gap:10px">
-        <button onclick="handleAdjust('out')" class="btn btn-dan" style="flex:2;font-size:18px;padding:14px;opacity:${canRem?1:.4}" ${!canRem?'disabled':''}>📤  RETIRAR</button>
+        <button onclick="handleAdjust('out')" class="btn ${isKit?'btn-kit':'btn-dan'}" style="flex:2;font-size:18px;padding:14px;opacity:${canRem?1:.4}" ${!canRem?'disabled':''}>
+          ${isKit?'🔧 RETIRAR KIT':'📤  RETIRAR'}
+        </button>
         ${S.user.isAdmin?`<button onclick="handleAdjust('in')" class="btn btn-suc" style="flex:1;font-size:18px;padding:14px">📥</button>`:''}
       </div>
-      ${!canRem&&sel&&sel.quantity<S.qty?`<p style="font-size:13px;color:var(--dan);text-align:center;margin-top:8px">Estoque insuficiente. Disponível: ${sel.quantity} ${esc(sel.unit)}</p>`:''}
+      ${!canRem&&sel&&!isKit&&sel.quantity<S.qty?`<p style="font-size:13px;color:var(--dan);text-align:center;margin-top:8px">Estoque insuficiente. Disponível: ${sel.quantity} ${esc(sel.unit)}</p>`:''}
+      ${!canRem&&isKit&&!kitOk?`<p style="font-size:13px;color:var(--dan);text-align:center;margin-top:8px">Estoque insuficiente em um ou mais componentes do kit.</p>`:''}
     </div>
   </div>`;
 }
 
-async function handleAdjust(type) {
-  const it = S.items.find(i => i.id===S.activeId);
-  const sel = S.selModel;
-  if (!it||!sel||S.qty<1) return;
-  if (type==='out' && sel.quantity < S.qty) return toast('Estoque insuficiente!','err');
-  const delta = type==='out' ? -S.qty : S.qty;
-  S.items = S.items.map(i => i.id!==it.id ? i : {
-    ...i, models: i.models.map(m => m.id!==sel.id ? m : {...m, quantity:Math.max(0,m.quantity+delta)})
-  });
-  const mov = {id:genId(),ts:new Date().toISOString(),user:S.user.name,itemId:it.id,itemName:it.name,modelId:sel.id,modelName:sel.name,qty:S.qty,type};
-  S.movements = [mov, ...S.movements];
-  S.qty = 1;
-  render();
-  try {
-    await saveData();
-    const word = type==='out'?'retirado(s)':'adicionado(s)';
-    toast(`${mov.qty} × ${sel.name} ${word}!`, type==='out'?'warn':'ok');
-  } catch(e) {
-    toast('Erro ao salvar. Verifique a conexão.','err');
+async function handleAdjust(type){
+  const it=S.items.find(i=>i.id===S.activeId);
+  const sel=S.selModel;
+  if(!it||!sel||S.qty<1) return;
+  const isKit=it.isKit&&it.components&&it.components.length>0;
+  if(type==='out'&&sel.quantity<S.qty&&!isKit) return toast('Estoque insuficiente!','err');
+  const delta=type==='out'?-S.qty:S.qty;
+  const newMovs=[...S.movements];
+
+  if(isKit&&type==='out'){
+    // Deduzir cada componente do kit
+    let allOk=true;
+    it.components.forEach(c=>{
+      const cItem=S.items.find(i=>i.id===c.itemId);
+      if(!cItem) return;
+      const cmId=c.sameModel?sel.id:c.modelId;
+      const cModel=cItem.models.find(m=>m.id===cmId);
+      if(!cModel||cModel.quantity<c.qty*S.qty) allOk=false;
+    });
+    if(!allOk) return toast('Estoque insuficiente nos componentes!','err');
+
+    S.items=S.items.map(i=>{
+      const comp=it.components.find(c=>c.itemId===i.id);
+      if(!comp) return i;
+      const cmId=comp.sameModel?sel.id:comp.modelId;
+      return {...i,models:i.models.map(m=>m.id!==cmId?m:{...m,quantity:Math.max(0,m.quantity-comp.qty*S.qty)})};
+    });
+    // Movimento do kit em si
+    newMovs.unshift({id:genId(),ts:new Date().toISOString(),user:S.user.name,itemId:it.id,itemName:it.name,modelId:sel.id,modelName:sel.name,qty:S.qty,type:'out',isKit:true});
+    // Movimentos dos componentes
+    it.components.forEach(c=>{
+      const cItem=S.items.find(i=>i.id===c.itemId);
+      if(!cItem) return;
+      const cmId=c.sameModel?sel.id:c.modelId;
+      const cModel=cItem.models.find(m=>m.id===cmId);
+      newMovs.unshift({id:genId(),ts:new Date().toISOString(),user:S.user.name,itemId:cItem.id,itemName:cItem.name,modelId:cmId,modelName:cModel?cModel.name:'?',qty:c.qty*S.qty,type:'out',kitParent:it.name});
+    });
+  } else {
+    // Item normal
+    S.items=S.items.map(i=>i.id!==it.id?i:{...i,models:i.models.map(m=>m.id!==sel.id?m:{...m,quantity:Math.max(0,m.quantity+delta)})});
+    newMovs.unshift({id:genId(),ts:new Date().toISOString(),user:S.user.name,itemId:it.id,itemName:it.name,modelId:sel.id,modelName:sel.name,qty:S.qty,type});
   }
+
+  S.movements=newMovs;
+  S.qty=1;
+  render();
+  try{
+    await saveData();
+    const word=type==='out'?'retirado(s)':'adicionado(s)';
+    toast(`${S.qty===1?1:S.qty} × ${sel.name} ${word}!`,type==='out'?'warn':'ok');
+  }catch(e){toast('Erro ao salvar. Verifique conexão.','err');}
 }
 
 // ─── ADMIN ───────────────────────────────────────────────────────────────────
-function admin() {
-  return `<div>
+function admin(){
+  return`<div>
     <div class="hdr">
       <button onclick="${S.adminTab==='list'?"go('home')":'backAdminList()'}" class="btn btn-ghost" style="padding:8px 14px;font-size:18px">←</button>
       <div style="font-family:'Barlow Condensed';font-weight:800;font-size:19px;color:var(--acc);letter-spacing:1px">⚙️ ADMINISTRADOR</div>
@@ -331,19 +389,21 @@ function admin() {
     <div class="body">${S.adminTab==='list'?adminList():adminForm()}</div>
   </div>`;
 }
-function backAdminList() { S.adminTab='list'; S.editItem=null; S.formData=null; render(); }
+function backAdminList(){S.adminTab='list';S.editItem=null;S.formData=null;render();}
 
-function adminList() {
-  return `<div class="su">
+function adminList(){
+  return`<div class="su">
     <button onclick="openNewItem()" class="btn btn-acc" style="width:100%;font-size:17px;padding:14px;margin-bottom:10px">+ CADASTRAR NOVO ITEM</button>
-    <button onclick="clearAllData()" class="btn" style="width:100%;font-size:14px;padding:11px;margin-bottom:20px;background:transparent;color:var(--dan);border:1px solid var(--dan);border-radius:8px">🗑 Limpar todos os dados de teste</button>
+    <button onclick="clearAllData()" class="btn" style="width:100%;font-size:14px;padding:11px;margin-bottom:20px;background:transparent;color:var(--dan);border:1px solid var(--dan)">🗑 Limpar todos os dados de teste</button>
     ${S.items.length===0?`<div style="text-align:center;padding:40px;color:var(--mut)">Nenhum item cadastrado.</div>`:
       S.items.map(it=>`<div class="card" style="padding:13px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
         <div style="width:46px;height:46px;background:var(--surf);border-radius:8px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
           ${it.image?`<img src="${it.image}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:22px">🔩</span>'}
         </div>
         <div style="flex:1;overflow:hidden">
-          <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.name)}</div>
+          <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px">
+            ${esc(it.name)} ${it.isKit?'<span class="kit-badge">KIT</span>':''}
+          </div>
           <div style="font-size:12px;color:var(--mut)">${it.models.length} modelo(s) · ${totalQty(it)} un total</div>
         </div>
         <button onclick="openEditItem('${it.id}')" class="btn btn-ghost" style="font-size:13px;padding:7px 12px">EDITAR</button>
@@ -351,29 +411,37 @@ function adminList() {
   </div>`;
 }
 
-function openNewItem() {
+function openNewItem(){
   S.editItem=null;
-  S.formData={name:'',cat:'',desc:'',img:'',models:[{id:genId(),name:'',quantity:0,unit:'un'}]};
+  S.formData={name:'',cat:'',desc:'',img:'',isKit:false,components:[],models:[{id:genId(),name:'',quantity:0,unit:'un'}]};
   S.adminTab='form'; render();
 }
-function openEditItem(id) {
+function openEditItem(id){
   S.editItem=S.items.find(i=>i.id===id);
-  S.formData={name:S.editItem.name,cat:S.editItem.category||'',desc:S.editItem.description||'',img:S.editItem.image||'',models:S.editItem.models.map(m=>({...m}))};
+  S.formData={
+    name:S.editItem.name,cat:S.editItem.category||'',desc:S.editItem.description||'',
+    img:S.editItem.image||'',isKit:S.editItem.isKit||false,
+    components:(S.editItem.components||[]).map(c=>({...c})),
+    models:S.editItem.models.map(m=>({...m}))
+  };
   S.adminTab='form'; render();
 }
 
-function getF() { return S.formData || (S.formData={name:'',cat:'',desc:'',img:'',models:[{id:genId(),name:'',quantity:0,unit:'un'}]}); }
+function getF(){return S.formData||(S.formData={name:'',cat:'',desc:'',img:'',isKit:false,components:[],models:[{id:genId(),name:'',quantity:0,unit:'un'}]});}
 
-function adminForm() {
+function adminForm(){
   const f=getF();
-  return `<div class="su">
+  // Itens disponíveis para componentes (excluindo o item sendo editado)
+  const availItems=S.items.filter(i=>!S.editItem||i.id!==S.editItem.id);
+
+  return`<div class="su">
     <div style="font-family:'Barlow Condensed';font-weight:800;font-size:22px;color:var(--acc);margin-bottom:20px">${S.editItem?'EDITAR ITEM':'NOVO ITEM'}</div>
     <label class="lbl">Nome do Item *</label>
     <input id="fn" value="${esc(f.name)}" oninput="getF().name=this.value" placeholder="Ex: Parafuso Sextavado" style="margin-bottom:14px"/>
     <label class="lbl">Categoria</label>
-    <input id="fc" value="${esc(f.cat)}" oninput="getF().cat=this.value" placeholder="Ex: Parafusos, Porcas, Arruelas..." style="margin-bottom:14px"/>
+    <input id="fc" value="${esc(f.cat)}" oninput="getF().cat=this.value" placeholder="Ex: Parafusos, Kits, Arruelas..." style="margin-bottom:14px"/>
     <label class="lbl">Descrição</label>
-    <textarea id="fd" oninput="getF().desc=this.value" placeholder="Descreva o item, medidas, materiais..." rows="3" style="resize:vertical;margin-bottom:14px">${esc(f.desc)}</textarea>
+    <textarea id="fd" oninput="getF().desc=this.value" placeholder="Descreva o item..." rows="3" style="resize:vertical;margin-bottom:14px">${esc(f.desc)}</textarea>
     <label class="lbl">Foto</label>
     <input type="file" id="fimg" accept="image/*" style="display:none" onchange="handleImgUpload(this)"/>
     <div style="margin-bottom:18px">
@@ -381,6 +449,52 @@ function adminForm() {
         ?`<div style="display:flex;align-items:center;gap:12px"><img src="${f.img}" style="width:100px;height:75px;object-fit:cover;border-radius:8px;border:1px solid var(--brd)"/><button onclick="getF().img='';render()" class="btn" style="background:transparent;color:var(--dan);font-size:13px;padding:6px 10px">Remover</button></div>`
         :`<button onclick="document.getElementById('fimg').click()" class="btn btn-ghost" style="font-size:14px;padding:12px 20px;border-style:dashed">📷 Adicionar Foto</button>`}
     </div>
+
+    <!-- TOGGLE KIT -->
+    <div style="background:var(--surf);border:1px solid var(--brd);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${f.isKit?'14px':'0'}">
+        <div>
+          <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px;color:var(--kit)">🔧 Item Composto (Kit)</div>
+          <div style="font-size:12px;color:var(--mut);margin-top:2px">Ao retirar, deduz automaticamente os componentes</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer">
+          <input type="checkbox" ${f.isKit?'checked':''} onchange="getF().isKit=this.checked;render()" style="opacity:0;width:0;height:0;position:absolute"/>
+          <span style="position:absolute;inset:0;background:${f.isKit?'var(--kit)':'var(--brd)'};border-radius:12px;transition:.3s">
+            <span style="position:absolute;top:3px;left:${f.isKit?'23px':'3px'};width:18px;height:18px;background:#fff;border-radius:50%;transition:.3s"></span>
+          </span>
+        </label>
+      </div>
+      ${f.isKit?`
+        <div id="comp-list">
+          ${f.components.map((c,ci)=>{
+            const ci_item=S.items.find(i=>i.id===c.itemId);
+            const ci_model=ci_item?.models.find(m=>m.id===c.modelId);
+            return`<div class="comp-row">
+              <div style="flex:1">
+                <select onchange="updateComp(${ci},'itemId',this.value);updateComp(${ci},'modelId','');render()" style="font-size:13px;padding:7px 10px;margin-bottom:6px">
+                  <option value="">Selecionar item...</option>
+                  ${availItems.map(ai=>`<option value="${ai.id}" ${c.itemId===ai.id?'selected':''}>${esc(ai.name)}</option>`).join('')}
+                </select>
+                ${ci_item?`<select onchange="updateComp(${ci},'modelId',this.value)" style="font-size:13px;padding:7px 10px;margin-bottom:6px">
+                  <option value="">Modelo fixo...</option>
+                  ${ci_item.models.map(m=>`<option value="${m.id}" ${c.modelId===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}
+                </select>
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut);cursor:pointer">
+                  <input type="checkbox" ${c.sameModel?'checked':''} onchange="updateComp(${ci},'sameModel',this.checked)" style="width:auto"/>
+                  Usar mesmo modelo do item pai
+                </label>`:''}
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;margin-left:8px">
+                <label style="font-size:10px;color:var(--mut)">Qtd</label>
+                <input type="number" min="1" value="${c.qty||1}" onchange="updateComp(${ci},'qty',parseInt(this.value)||1)" style="width:60px;text-align:center;font-size:15px;padding:6px"/>
+              </div>
+              <button onclick="removeComp(${ci})" style="background:none;border:none;color:var(--dan);font-size:22px;padding:0 4px;flex-shrink:0;cursor:pointer">×</button>
+            </div>`;
+          }).join('')}
+        </div>
+        <button onclick="addComp()" class="btn" style="background:var(--surf);color:var(--kit);border:1px dashed var(--kit);width:100%;font-size:13px;padding:10px;margin-top:4px">+ Adicionar componente</button>`:''}
+    </div>
+
     <label class="lbl">Modelos / Variações *</label>
     <div id="mlist">
       ${f.models.map((m,i)=>`<div class="card" style="padding:11px 12px;margin-bottom:8px">
@@ -398,44 +512,59 @@ function adminForm() {
   </div>`;
 }
 
-async function handleImgUpload(inp) {
-  const file = inp.files[0];
-  if (!file) return;
-  try {
-    getF().img = await resizeImg(file);
-    render();
-  } catch(e) { toast('Erro ao processar imagem','err'); }
+function addComp(){getF().components.push({itemId:'',modelId:'',qty:1,sameModel:false});render();}
+function removeComp(i){const f=getF();f.components.splice(i,1);render();}
+function updateComp(i,k,v){const f=getF();f.components[i][k]=v;}
+
+async function handleImgUpload(inp){
+  const file=inp.files[0]; if(!file) return;
+  try{getF().img=await resizeImg(file);render();}catch(e){toast('Erro ao processar imagem','err');}
 }
 
-async function saveItem() {
-  const f = getF();
-  const fn = document.getElementById('fn'); if(fn) f.name=fn.value;
-  const fc = document.getElementById('fc'); if(fc) f.cat=fc.value;
-  const fd = document.getElementById('fd'); if(fd) f.desc=fd.value;
-  if (!f.name.trim()) return toast('Informe o nome do item!','err');
-  if (f.models.some(m=>!m.name.trim())) return toast('Todos os modelos precisam de nome!','err');
-  const it = {id:S.editItem?.id||genId(),name:f.name.trim(),category:f.cat.trim()||'Geral',description:f.desc.trim(),image:f.img,models:f.models};
-  S.items = S.editItem ? S.items.map(i=>i.id===it.id?it:i) : [...S.items,it];
-  S.adminTab='list'; S.editItem=null; S.formData=null;
+async function saveItem(){
+  const f=getF();
+  const fn=document.getElementById('fn');if(fn)f.name=fn.value;
+  const fc=document.getElementById('fc');if(fc)f.cat=fc.value;
+  const fd=document.getElementById('fd');if(fd)f.desc=fd.value;
+  if(!f.name.trim()) return toast('Informe o nome do item!','err');
+  if(f.models.some(m=>!m.name.trim())) return toast('Todos os modelos precisam de nome!','err');
+  const it={
+    id:S.editItem?.id||genId(),name:f.name.trim(),category:f.cat.trim()||'Geral',
+    description:f.desc.trim(),image:f.img,
+    isKit:f.isKit,components:f.isKit?f.components.filter(c=>c.itemId):[],
+    models:f.models
+  };
+  S.items=S.editItem?S.items.map(i=>i.id===it.id?it:i):[...S.items,it];
+  S.adminTab='list';S.editItem=null;S.formData=null;
   render();
-  try { await saveData(); toast(S.editItem?'Item atualizado!':'Item criado!'); }
-  catch(e) { toast('Erro ao salvar. Verifique a conexão.','err'); }
+  try{await saveData();toast(S.editItem?'Item atualizado!':'Item criado!');}
+  catch(e){toast('Erro ao salvar.','err');}
 }
 
-async function deleteItem(id) {
-  if (!confirm('Excluir este item?')) return;
-  S.items = S.items.filter(i=>i.id!==id);
-  S.adminTab='list'; S.editItem=null; S.formData=null;
+async function deleteItem(id){
+  if(!confirm('Excluir este item?')) return;
+  S.items=S.items.filter(i=>i.id!==id);
+  S.adminTab='list';S.editItem=null;S.formData=null;
   render();
-  try { await saveData(); toast('Item removido!','warn'); }
-  catch(e) { toast('Erro ao salvar.','err'); }
+  try{await saveData();toast('Item removido!','warn');}
+  catch(e){toast('Erro ao salvar.','err');}
+}
+
+async function clearAllData(){
+  if(!confirm('⚠️ Apagar TODOS os itens e histórico? Não pode ser desfeito.')) return;
+  try{
+    await apiCall({action:'clear'});
+    await loadData();
+    toast('Dados apagados!','warn');
+    go('home');
+  }catch(e){toast('Erro ao limpar dados.','err');}
 }
 
 // ─── HISTORY ─────────────────────────────────────────────────────────────────
-function history() {
-  const fil = S.histFilter;
-  const movs = fil==='all'?S.movements:S.movements.filter(m=>m.type===fil);
-  return `<div class="fi">
+function history(){
+  const fil=S.histFilter;
+  const movs=fil==='all'?S.movements:S.movements.filter(m=>m.type===fil);
+  return`<div class="fi">
     <div class="hdr">
       <button onclick="go('home')" class="btn btn-ghost" style="padding:8px 14px;font-size:18px">←</button>
       <div style="font-family:'Barlow Condensed';font-weight:800;font-size:19px;letter-spacing:1px">📋 HISTÓRICO</div>
@@ -448,32 +577,29 @@ function history() {
       </div>
       ${movs.length===0
         ?`<div style="text-align:center;padding:50px;color:var(--mut)"><div style="font-size:36px;margin-bottom:8px">📋</div>Nenhuma movimentação.</div>`
-        :movs.map(m=>`<div class="mov-row" style="border-left:3px solid ${m.type==='out'?'var(--dan)':'var(--suc)'}">
+        :movs.map(m=>`<div class="mov-row" style="border-left:3px solid ${m.type==='out'?m.isKit?'var(--kit)':'var(--dan)':'var(--suc)'}">
           <div style="flex:1;overflow:hidden;margin-right:12px">
-            <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px">${m.type==='out'?'📤':'📥'} ${esc(m.itemName)}</div>
-            <div style="font-size:12px;color:var(--mut);margin-top:2px">${esc(m.modelName)} · <strong style="color:var(--txt)">${esc(m.user)}</strong></div>
+            <div style="font-family:'Barlow Condensed';font-weight:700;font-size:15px">${m.type==='out'?m.isKit?'🔧':'📤':'📥'} ${esc(m.itemName)}</div>
+            <div style="font-size:12px;color:var(--mut);margin-top:2px">${esc(m.modelName)} · <strong style="color:var(--txt)">${esc(m.user)}</strong>${m.kitParent?` <span style="color:var(--kit)">(kit: ${esc(m.kitParent)})</span>`:''}</div>
             <div style="font-size:11px;color:var(--mut);margin-top:2px">${fmt(m.ts)}</div>
           </div>
-          <div style="font-family:'Barlow Condensed';font-weight:900;font-size:28px;color:${m.type==='out'?'var(--dan)':'var(--suc)'};flex-shrink:0">${m.type==='out'?'-':'+'}${m.qty}</div>
+          <div style="font-family:'Barlow Condensed';font-weight:900;font-size:28px;color:${m.type==='out'?m.isKit?'var(--kit)':'var(--dan)':'var(--suc)'};flex-shrink:0">${m.type==='out'?'-':'+'}${m.qty}</div>
         </div>`).join('')}
     </div>
   </div>`;
 }
 
 // ─── BOOT ────────────────────────────────────────────────────────────────────
-(async () => {
-  try {
+(async()=>{
+  try{
     await loadData();
     document.getElementById('loading-overlay').style.display='none';
     render();
-  } catch(e) {
-    document.getElementById('loading-overlay').innerHTML = `
+  }catch(e){
+    document.getElementById('loading-overlay').innerHTML=`
       <div style="font-size:40px">⚠️</div>
       <div style="font-family:'Barlow Condensed';font-size:22px;color:var(--acc)">ERRO DE CONEXÃO</div>
-      <div style="color:var(--mut);font-size:14px;max-width:300px;text-align:center;line-height:1.6">
-        Não foi possível conectar ao servidor.<br>
-        Verifique se o n8n está ativo e tente novamente.
-      </div>
+      <div style="color:var(--mut);font-size:14px;max-width:300px;text-align:center;line-height:1.6">Não foi possível conectar ao servidor.</div>
       <button onclick="location.reload()" class="btn btn-acc" style="font-size:16px;padding:12px 24px;margin-top:8px">TENTAR NOVAMENTE</button>`;
   }
 })();
